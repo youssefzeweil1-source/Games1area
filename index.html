@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Games1area | Pro Challenge 🎮</title>
+    <title>Games1area | Ultimate Challenge 🎮</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
@@ -14,31 +14,28 @@
         #setup { padding: 80px 20px; }
         .input-style { padding: 15px; border-radius: 12px; border: 1px solid #333; width: 250px; background: #1a1a1a; color: #fff; text-align: center; font-size: 1.1rem; outline: none; }
         .btn-main { background: var(--main); color: #000; border: none; padding: 15px 40px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(0,255,0,0.3); transition: 0.3s; }
-        .btn-main:hover { transform: scale(1.05); }
 
         .tabs { display: flex; max-width: 400px; margin: 20px auto; background: #1a1a1a; border-radius: 50px; padding: 5px; border: 1px solid #333; }
         .tab { flex: 1; padding: 12px; cursor: pointer; font-weight: bold; color: #777; border-radius: 50px; transition: 0.3s; }
         .tab.active { color: #000; background: var(--main); }
 
-        /* الشايب UI */
-        #sh-ui { padding: 10px; }
-        .card { width: 60px; height: 90px; background: white; color: black; border-radius: 10px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; margin: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; border: 1px solid #ddd; position: relative; transition: 0.2s; vertical-align: top; }
-        .card:hover { transform: translateY(-8px); }
+        /* Card System */
+        .card { width: 55px; height: 85px; background: white; color: black; border-radius: 8px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; margin: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; border: 1px solid #ddd; position: relative; transition: 0.2s; vertical-align: top; }
         .card.red { color: #d63031; }
         .card.back { background: linear-gradient(135deg, var(--card-back), #0c2461); border: 2px solid #fff; color: transparent; }
         .card.shaieb { background: var(--danger); color: white; animation: shake 0.5s infinite; border: 2px solid #fff; }
-        .card.disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); transform: none !important; }
+        .card.disabled { opacity: 0.5; pointer-events: none; transform: none !important; }
 
         @keyframes shake { 0%,100% {transform:rotate(0)} 25% {transform:rotate(4deg)} 75% {transform:rotate(-4deg)} }
         
-        /* XO UI */
+        /* XO Styles */
         .xo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: auto; }
         .cell { height: 90px; background: #151515; border-radius: 15px; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #222; transition: 0.3s; }
         .cell:not(:empty) { animation: pop 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
-        @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         .win-cell { background: var(--main) !important; color: #000 !important; box-shadow: 0 0 20px var(--main); }
+        @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 
-        .toast { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 20px; border-radius: 15px; font-weight: bold; z-index: 10000; background: var(--shaieb); color: #000; border: 3px solid #000; font-size: 1.2rem; animation: bounceIn 0.5s forwards; pointer-events: none; width: 80%; max-width: 250px; }
+        .toast { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 20px; border-radius: 15px; font-weight: bold; z-index: 10000; background: var(--shaieb); color: #000; border: 3px solid #000; font-size: 1.1rem; animation: bounceIn 0.5s forwards; pointer-events: none; width: 70%; max-width: 250px; }
         @keyframes bounceIn { 0% { transform: translate(-50%, -80%) scale(0.5); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
         .hidden { display: none; }
     </style>
@@ -46,10 +43,10 @@
 <body>
 
 <div id="setup">
-    <h1 style="color:var(--main); font-size: 2.5rem; margin-bottom: 5px;">Games1area 🎮</h1>
-    <p style="color: #888;">تحدي الصمود.. الهروب من الشايب!</p>
-    <input type="text" id="room" class="input-style" placeholder="كود الغرفة (مثلاً: 777)"><br><br>
-    <button class="btn-main" onclick="joinRoom()">دخول الغرفة</button>
+    <h1 style="color:var(--main); font-size: 2.5rem;">Games1area 🎮</h1>
+    <p style="color: #888;">اجمع صحابك.. والبسهم الشايب!</p>
+    <input type="text" id="room" class="input-style" placeholder="كود الغرفة"><br><br>
+    <button class="btn-main" onclick="joinRoom()">دخول</button>
 </div>
 
 <div id="game-ui" class="hidden">
@@ -59,18 +56,17 @@
     </div>
 
     <div id="xo-ui">
-        <h3 id="xo-stat" style="color:var(--main)">في انتظار الخصم..</h3>
+        <h3 id="xo-stat" style="color:var(--main)">...</h3>
         <div class="xo-grid" id="xo-board"></div>
     </div>
 
     <div id="sh-ui" class="hidden">
-        <h3 id="sh-stat" style="color:var(--shaieb)">جاري التوزيع..</h3>
+        <h3 id="sh-stat" style="color:var(--shaieb)">...</h3>
         <div id="op-area" style="min-height:110px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin: 10px;"></div>
-        <div style="margin: 10px 0; font-size: 0.8rem; color: #666;">ورقك أنت (ممنوع الغش 🤫)</div>
         <div id="my-area" style="min-height:110px; padding: 10px;"></div>
     </div>
 
-    <button onclick="clearRoom()" style="margin-top:40px; color:var(--danger); background:none; border:none; cursor:pointer; text-decoration: underline; font-family: 'Cairo';">إعادة تعيين الغرفة 🔄</button>
+    <button onclick="clearRoom()" style="margin-top:40px; color:var(--danger); background:none; border:none; cursor:pointer; text-decoration: underline;">إعادة تعيين 🔄</button>
 </div>
 
 <script>
@@ -81,7 +77,7 @@
     let rID, mID, rRef, myRole = ""; 
     let canAction = true;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
-    const insults = ["يا واد يا محظوظ! 🍀", "الشايب بيسلم عليك.. 🤡", "شكلك هتبات مع الشايب! ⛺", "سحبتها بثقة وطلعت خازوق! 💀", "سرقتك يا مغفل! 😈"];
+    const insults = ["يا محظوظ! 🍀", "الشايب بيسلم عليك.. 🤡", "لبست الخازوق! 💀", "سرقتك يا مغفل! 😈", "ركز يا بطل! 🔥"];
 
     function showMsg(txt) {
         const old = document.querySelector('.toast'); if(old) old.remove();
@@ -92,7 +88,7 @@
 
     function joinRoom() {
         rID = document.getElementById('room').value.trim();
-        if(!rID) return alert("دخل كود الغرفة!");
+        if(!rID) return alert("دخل الكود!");
         mID = "U" + Math.floor(Math.random()*9999);
         rRef = db.ref(`pro_version_v15/${rID}`);
 
@@ -103,8 +99,6 @@
         }, (err, committed, snap) => {
             const s = snap.val();
             myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
-            
-            // لوجيك الهروب (Disconnect)
             rRef.child(`slots/${myRole}`).onDisconnect().remove();
             
             document.getElementById('setup').classList.add('hidden');
@@ -132,14 +126,14 @@
         });
 
         rRef.child('xo').on('value', s => {
-            const d = s.val() || { b: Array(9).fill(""), turn: "p1", win: false, winCells: [] };
+            const d = s.val() || { b: Array(9).fill(""), turn: "p1" };
             const cells = document.querySelectorAll('.cell');
             d.b.forEach((v, i) => { 
                 cells[i].innerText = v; 
                 cells[i].style.color = (v==='X'?'#0f0':'#f00');
                 cells[i].classList.toggle('win-cell', d.winCells && d.winCells.includes(i));
             });
-            document.getElementById('xo-stat').innerText = d.win ? `الفائز هو ${d.win} 🏆` : (myRole === d.turn ? "دورك الآن ✅" : "انتظر الخصم..");
+            document.getElementById('xo-stat').innerText = d.win ? `الفائز ${d.win} 🏆` : (myRole === d.turn ? "دورك الآن ✅" : "انتظر خصمك..");
         });
 
         rRef.child('sh').on('value', s => {
@@ -158,7 +152,7 @@
 
     function tapXO(i) {
         rRef.child('xo').once('value', s => {
-            let d = s.val() || { b: Array(9).fill(""), turn: "p1", win: false };
+            let d = s.val() || { b: Array(9).fill(""), turn: "p1" };
             if(myRole !== d.turn || d.b[i] || d.win) return;
             d.b[i] = (myRole === 'p1') ? 'X' : 'O';
             const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -176,7 +170,7 @@
         const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
         let deck = [];
         ['H','S','D','C'].forEach(s => ranks.forEach(r => deck.push({r, s})));
-        deck.splice(Math.floor(Math.random()*52), 1); // حذف ورقة عشوائية لجعل واحدة يتيمة
+        deck.splice(Math.floor(Math.random()*52), 1); 
         deck.push({r:'SHAIEB', s:'🤡'});
         deck = deck.sort(() => Math.random() - 0.5);
 
@@ -188,7 +182,7 @@
 
         let p1C = filterPairs(deck.slice(0, 26));
         let p2C = filterPairs(deck.slice(26));
-        rRef.child('sh').set({ p1C, p2C, turn: 'p1', lastMsg: "تم توزيع الورق وتصفية الأزواج! 🔥" });
+        rRef.child('sh').set({ p1C, p2C, turn: 'p1', lastMsg: "تم توزيع الورق وتصفية الأزواج! 🔥", msgID: Math.random() });
     }
 
     function renderSh(d) {
@@ -212,32 +206,48 @@
             myB.appendChild(div);
         });
 
-        if (myC.length === 0 && opC.length > 0) { showMsg("🎉 فزت وهرت!"); rRef.child('sh/lastMsg').set("الخصم فاز وهرب! 🏃‍♂️"); }
+        if (myC.length === 0 && opC.length > 0) { alert("مبروووك! فزت وهرت 🎉"); clearRoom(); }
+        if (myC.length === 1 && myC[0].r === 'SHAIEB' && opC.length === 0) { alert("🤡 لبست الشايب! هارد لك"); clearRoom(); }
     }
 
     function pullSh(idx) {
         if(!canAction) return;
+        canAction = false; 
+
         rRef.child('sh').once('value', s => {
             let d = s.val();
-            if(!d || d.turn !== myRole) return;
-            canAction = false;
+            if(!d || d.turn !== myRole) { canAction = true; return; }
+
             let myKey = (myRole === 'p1' ? 'p1C' : 'p2C');
             let opKey = (myRole === 'p1' ? 'p2C' : 'p1C');
             let myArr = [...(d[myKey] || [])];
             let opArr = [...(d[opKey] || [])];
-            if(opArr.length === 0) return canAction = true;
-
-            let card = opArr.splice(idx, 1)[0];
-            myArr.push(card);
             
-            let counts = {};
-            myArr.forEach(c => counts[c.r] = (counts[c.r] || 0) + 1);
-            let hasPair = myArr.some(c => c.r !== 'SHAIEB' && counts[c.r] >= 2);
-            let cleaned = myArr.filter(c => c.r === 'SHAIEB' || counts[c.r] % 2 !== 0);
+            if(opArr.length === 0) { canAction = true; return; }
+
+            let pulled = opArr.splice(idx, 1)[0];
+            let pairIdx = myArr.findIndex(c => c.r === pulled.r && c.r !== 'SHAIEB');
+
+            if(pairIdx !== -1) {
+                myArr.splice(pairIdx, 1);
+                var hasPair = true;
+            } else {
+                myArr.push(pulled);
+                var hasPair = false;
+            }
 
             const msg = insults[Math.floor(Math.random() * insults.length)];
-            let up = { [myKey]: cleaned, [opKey]: opArr, turn: (myRole === 'p1' ? 'p2' : 'p1'), lastMsg: hasPair ? "✨ طار زوج! و " + msg : msg, msgID: Math.random() };
-            rRef.child('sh').update(up).then(() => setTimeout(() => canAction = true, 600));
+            let updateData = {
+                [myKey]: myArr,
+                [opKey]: opArr,
+                turn: (myRole === 'p1' ? 'p2' : 'p1'),
+                lastMsg: hasPair ? "✨ طار زوج! و " + msg : msg,
+                msgID: Math.random()
+            };
+
+            rRef.child('sh').update(updateData).then(() => {
+                setTimeout(() => { canAction = true; }, 800);
+            });
         });
     }
 
