@@ -22,8 +22,15 @@
         @keyframes moveBg { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
         /* الشاشات الزجاجية */
-        #setup, #lobby, #voting-screen, #game-ui { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
+        #setup, #lobby, #voting-screen { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
         
+        /* Game UI - Full Screen Mode */
+        #game-ui { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center;
+        }
+
         /* Lobby Styles */
         .player-slot { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin: 10px auto; width: 80%; border: 2px solid #333; font-weight: bold; display: flex; flex-direction: column; align-items: flex-start; }
         .slot-top { width: 100%; display: flex; justify-content: space-between; align-items: center; }
@@ -39,27 +46,25 @@
 
         /* UI Basics */
         .btn-main { background: var(--main); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); }
-        .tabs { display: flex; overflow-x: auto; background: rgba(17, 17, 17, 0.8); padding: 5px; gap: 5px; border-bottom: 2px solid #222; }
-        .tab { flex: 1; min-width: 80px; padding: 10px; font-size: 0.7rem; font-weight: bold; color: #555; background: rgba(26, 26, 26, 0.8); border-radius: 10px; cursor: pointer; }
-        .tab.active { color: #000; background: var(--main); box-shadow: 0 0 15px var(--main); }
+        .tabs { display: flex; width: 100%; background: rgba(17, 17, 17, 0.8); padding: 5px; gap: 5px; border-bottom: 2px solid #222; position: fixed; top: 0; }
 
-        /* Speed War */
-        #war-container { width: 90%; height: 400px; margin: 10px auto; border: 4px solid #222; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; background: rgba(0,0,0,0.5); }
-        .war-half { transition: height 0.05s linear; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.5rem; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        /* Speed War - Maximize */
+        #war-container { width: 100vw; height: 100vh; margin: 0; border: none; border-radius: 0; overflow: hidden; display: flex; flex-direction: column; }
+        .war-half { transition: height 0.05s linear; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 2.5rem; text-shadow: 0 0 15px rgba(0,0,0,0.7); }
 
         /* Bomb */
-        #bomb-circle { width: 140px; height: 140px; border-radius: 50%; border: 8px solid var(--danger); margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; box-shadow: 0 0 30px var(--danger); background: rgba(0,0,0,0.6); }
-        .num-btn { background: #222; border: 1px solid #444; color: white; padding: 12px 20px; border-radius: 10px; font-size: 1.5rem; margin: 5px; }
+        #bomb-circle { width: 180px; height: 180px; border-radius: 50%; border: 10px solid var(--danger); margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; box-shadow: 0 0 40px var(--danger); background: rgba(0,0,0,0.6); }
+        .num-btn { background: #222; border: 1px solid #444; color: white; padding: 20px 30px; border-radius: 15px; font-size: 2rem; margin: 10px; }
 
         /* Cards (Shaieb) */
-        .card { width: 50px; height: 75px; background: white; color: black; border-radius: 8px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; margin: 3px; font-size: 0.9rem; border: 1px solid #ccc; }
+        .card { width: 60px; height: 90px; background: white; color: black; border-radius: 8px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; margin: 5px; font-size: 1.1rem; border: 1px solid #ccc; }
         .card.back { background: var(--card-back); color: transparent; border: 2px solid #fff; }
         .card.red { color: #ff003c; }
         .card.shaieb { background: var(--danger); color: white; box-shadow: 0 0 10px red; }
 
         /* XO */
-        .xo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 280px; margin: auto; }
-        .cell { height: 80px; background: rgba(21, 21, 21, 0.8); border-radius: 15px; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; border: 2px solid #222; }
+        .xo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 90vw; max-width: 400px; margin: auto; }
+        .cell { height: 120px; background: rgba(21, 21, 21, 0.8); border-radius: 20px; font-size: 3.5rem; display: flex; align-items: center; justify-content: center; border: 2px solid #222; }
 
         .hidden { display: none !important; }
         .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px 40px; border-radius: 25px; font-weight: 900; font-size: 1.4rem; z-index: 10000; text-align: center; border: 5px solid var(--main); line-height: 1.4; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
@@ -114,27 +119,27 @@
 
 <div id="game-ui" class="hidden">
     <div class="tabs hidden" id="game-tabs">
-        <div id="t-war" class="tab active" onclick="switchUI('war')">السرعة ⚡</div>
-        <div id="t-sh" class="tab" onclick="switchUI('sh')">الشايب 🤡</div>
-        <div id="t-bomb" class="tab" onclick="switchUI('bomb')">القنبلة 💣</div>
-        <div id="t-xo" class="tab" onclick="switchUI('xo')">XO ⭕</div>
+        <div id="t-war" class="tab active">السرعة ⚡</div>
+        <div id="t-sh" class="tab">الشايب 🤡</div>
+        <div id="t-bomb" class="tab">القنبلة 💣</div>
+        <div id="t-xo" class="tab">XO ⭕</div>
     </div>
 
-    <div id="war-ui" style="margin-top: 20px;">
+    <div id="war-ui" class="hidden" style="width: 100%;">
         <div id="war-container" onclick="tapWar(event)">
             <div id="op-war" class="war-half" style="background:var(--danger); height:50%;">الضحية</div>
             <div id="my-war" class="war-half" style="background:var(--main); height:50%;">الوحش</div>
         </div>
     </div>
 
-    <div id="sh-ui" class="hidden" style="margin-top: 20px;">
-        <h3 id="sh-stat" style="color:var(--shaieb); background: rgba(0,0,0,0.5); display: inline-block; padding: 5px 15px; border-radius: 10px;">...</h3>
+    <div id="sh-ui" class="hidden">
+        <h3 id="sh-stat" style="color:var(--shaieb); background: rgba(0,0,0,0.8); display: inline-block; padding: 10px 20px; border-radius: 10px; margin-bottom: 20px;">...</h3>
         <div id="op-area"></div>
-        <div id="my-area" style="margin-top:20px;"></div>
+        <div id="my-area" style="margin-top:30px;"></div>
     </div>
 
-    <div id="bomb-ui" class="hidden" style="margin-top: 20px;">
-        <h2 id="bomb-msg">دور مين؟</h2>
+    <div id="bomb-ui" class="hidden">
+        <h2 id="bomb-msg" style="text-shadow: 0 0 10px red;">دور مين؟</h2>
         <div id="bomb-circle">0</div>
         <div id="bomb-btns">
             <button class="num-btn" onclick="addBomb(1)">+1</button>
@@ -143,12 +148,12 @@
         </div>
     </div>
 
-    <div id="xo-ui" class="hidden" style="margin-top: 20px;">
-        <h3 id="xo-stat" style="color:var(--main); background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px;">...</h3>
+    <div id="xo-ui" class="hidden">
+        <h3 id="xo-stat" style="color:var(--main); background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 10px; margin-bottom: 20px;">...</h3>
         <div class="xo-grid" id="xo-board"></div>
     </div>
 
-    <button onclick="clearRoom()" style="background:none; border:none; color:#777; margin-top:30px; text-decoration:underline; font-weight:bold;">سوفت وير شامل للغرفة 🔄</button>
+    <button onclick="clearRoom()" style="position: fixed; bottom: 10px; background:none; border:none; color:#555; text-decoration:underline; font-size: 0.7rem;">سوفت وير 🔄</button>
 </div>
 
 <script>
@@ -212,7 +217,6 @@
         showBigMsg(msg);
         setTimeout(() => {
             document.getElementById('game-ui').classList.add('hidden');
-            document.getElementById('game-tabs').classList.add('hidden'); // إخفاء التابات لللوبي القادم
             document.getElementById('ready-btn').classList.remove('hidden');
             document.getElementById('lobby').classList.remove('hidden');
             document.querySelectorAll('.vote-card').forEach(el => el.classList.remove('selected'));
@@ -227,14 +231,9 @@
             const ready = d.ready || {};
             const votes = d.votes || {};
             
-            document.getElementById('p1-slot').className = slots.p1 ? "player-slot active" : "player-slot";
             document.getElementById('p1-ready').innerText = ready.p1 ? "مستعد ✅" : (slots.p1 ? "بيجهز نفسه.." : "غائب");
-            document.getElementById('p1-ready').className = ready.p1 ? "status-tag ready" : "status-tag";
             document.getElementById('st-p1').innerText = votes.p1 ? "لاعب 1: " + gameNames[votes.p1] : "لاعب 1: بيفكر..";
-
-            document.getElementById('p2-slot').className = slots.p2 ? "player-slot active" : "player-slot";
             document.getElementById('p2-ready').innerText = ready.p2 ? "مستعد ✅" : (slots.p2 ? "بيجهز نفسه.." : "غائب");
-            document.getElementById('p2-ready').className = ready.p2 ? "status-tag ready" : "status-tag";
             document.getElementById('st-p2').innerText = votes.p2 ? "لاعب 2: " + gameNames[votes.p2] : "لاعب 2: بيفكر..";
 
             if (ready.p1 && ready.p2 && d.gameState !== 'playing') {
@@ -255,7 +254,6 @@
                 document.getElementById('lobby').classList.add('hidden');
                 document.getElementById('voting-screen').classList.add('hidden');
                 document.getElementById('game-ui').classList.remove('hidden');
-                document.getElementById('game-tabs').classList.add('hidden'); // هنا الإخفاء الفعلي للتابات أثناء اللعب
                 initXO();
                 startListeners();
             }
@@ -269,17 +267,13 @@
         document.getElementById('v-' + game).classList.add('selected');
     }
 
-    function switchUI(t) { rRef.update({ activeTab: t }); }
-
     function startListeners() {
         rRef.child('activeTab').on('value', s => {
             const t = s.val() || 'war';
             ['war','sh','bomb','xo'].forEach(id => {
                 document.getElementById(id+'-ui').classList.add('hidden');
-                document.getElementById('t-'+id).classList.remove('active');
             });
             document.getElementById(t+'-ui').classList.remove('hidden');
-            document.getElementById('t-'+t).classList.add('active');
         });
 
         rRef.child('war').on('value', s => {
