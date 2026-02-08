@@ -25,8 +25,11 @@
         #setup, #lobby, #game-ui { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
         
         /* Lobby Styles */
-        .player-slot { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin: 10px auto; width: 80%; border: 2px solid #333; font-weight: bold; }
+        .player-slot { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin: 10px auto; width: 80%; border: 2px solid #333; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .player-slot.active { border-color: var(--main); background: rgba(0,255,0,0.1); color: var(--main); }
+        .status-tag { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: #333; color: #fff; }
+        .status-tag.ready { background: var(--main); color: #000; }
+
         .vote-card { background: rgba(34, 34, 34, 0.9); padding: 15px; border-radius: 15px; margin: 5px; display: inline-block; width: 40%; cursor: pointer; border: 2px solid #444; transition: 0.3s; }
         .vote-card.selected { border-color: var(--main); box-shadow: 0 0 15px var(--main); transform: scale(1.05); }
 
@@ -70,18 +73,26 @@
 </div>
 
 <div id="lobby" class="hidden" style="padding-top: 50px;">
-    <h2 style="color:var(--main)">غرفة الانتظار ⏳</h2>
-    <div id="p1-slot" class="player-slot">لاعب 1: في انتظار الخصم...</div>
-    <div id="p2-slot" class="player-slot">لاعب 2: في انتظار الخصم...</div>
+    <h2 style="color:var(--main)">غرفة الاستعداد ⚔️</h2>
     
-    <div id="voting-area" class="hidden" style="margin-top: 30px;">
-        <h3 style="color:var(--shaieb)">صوّت للعبة اللي تعجبك:</h3>
+    <div id="p1-slot" class="player-slot">
+        <span>لاعب 1</span>
+        <span id="p1-ready" class="status-tag">في انتظار الدخول</span>
+    </div>
+    <div id="p2-slot" class="player-slot">
+        <span>لاعب 2</span>
+        <span id="p2-ready" class="status-tag">في انتظار الدخول</span>
+    </div>
+
+    <button id="ready-btn" class="btn-main" onclick="iamReady()" style="margin-top: 20px;">أنا مستعد! 🔥</button>
+    
+    <div id="voting-area" class="hidden" style="margin-top: 30px; border-top: 2px solid #222; padding-top: 20px;">
+        <h3 style="color:var(--shaieb)">صوّتوا للعبة الملحمة:</h3>
         <div class="vote-card" id="v-war" onclick="vote('war')">السرعة ⚡</div>
         <div class="vote-card" id="v-sh" onclick="vote('sh')">الشايب 🤡</div>
         <div class="vote-card" id="v-bomb" onclick="vote('bomb')">القنبلة 💣</div>
         <div class="vote-card" id="v-xo" onclick="vote('xo')">XO ⭕</div>
     </div>
-    <p id="wait-msg" style="color:#777; margin-top: 20px;">مستنيين التصويت يخلص...</p>
 </div>
 
 <div id="game-ui" class="hidden">
@@ -131,7 +142,7 @@
     let rID, mID, rRef, myRole = "", canAction = true;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
 
-    const insults = ["يا نوب اعتزل أحسن! 😂", "سرعة سلحفاة مشلولة 🐢", "العب بصباعك التاني يمكن تفلح 🤡", "شكلك وحش أوي قدام الخصم 💀", "أنا لو منك أرمي الموبايل 🚮", "جت فيك يا خايب! 💣", "الخصم داس عليك حرفياً 🦶", "إيه الضحك ده؟ 😂"];
+    const insults = ["يا نوب اعتزل أحسن! 😂", "سرعة سلحفاة مشلولة 🐢", "العب بصباعك التاني يمكن تفلح 🤡", "شكلك وحش أوي قدام الخصم 💀", "أنا لو منك أرمي الموبايل 🚮", "جت فيك يا خايب! 💣", "الخصم داس عليك حرفياً 🦶", "إيه الضحك ده? 😂"];
     const wins = ["جلدته جلد! 🔥", "مستواك عالمي يا وحش 🦁", "الخصم بيعيط في الزاوية 😭", "إيه السيطرة دي يا ملك! 👑", "سهلة أوي.. هات اللي بعده 😎"];
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -149,9 +160,8 @@
         }, (err, comm, snap) => {
             const s = snap.val();
             myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
-            const mySlotRef = rRef.child(`slots/${myRole}`);
-            mySlotRef.onDisconnect().remove();
-            rRef.child('slots').on('value', ss => { if(!ss.exists()) rRef.remove(); });
+            rRef.child(`slots/${myRole}`).onDisconnect().remove();
+            rRef.child(`ready/${myRole}`).onDisconnect().remove();
             
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('lobby').classList.remove('hidden');
@@ -159,24 +169,33 @@
         });
     }
 
-    // نظام اللوبي المدمج
+    function iamReady() {
+        if(myRole === 'viewer') return;
+        rRef.child(`ready/${myRole}`).set(true);
+        document.getElementById('ready-btn').classList.add('hidden');
+    }
+
     function listenLobby() {
         rRef.on('value', snap => {
             const d = snap.val() || {};
             const slots = d.slots || {};
+            const ready = d.ready || {};
             
-            document.getElementById('p1-slot').innerText = slots.p1 ? "لاعب 1: متصل ✅" : "لاعب 1: في انتظار الخصم...";
             document.getElementById('p1-slot').className = slots.p1 ? "player-slot active" : "player-slot";
-            document.getElementById('p2-slot').innerText = slots.p2 ? "لاعب 2: متصل ✅" : "لاعب 2: في انتظار الخصم...";
-            document.getElementById('p2-slot').className = slots.p2 ? "player-slot active" : "player-slot";
+            document.getElementById('p1-ready').innerText = ready.p1 ? "مستعد ✅" : (slots.p1 ? "بيجهز نفسه.." : "غائب");
+            document.getElementById('p1-ready').className = ready.p1 ? "status-tag ready" : "status-tag";
 
-            if (slots.p1 && slots.p2) {
+            document.getElementById('p2-slot').className = slots.p2 ? "player-slot active" : "player-slot";
+            document.getElementById('p2-ready').innerText = ready.p2 ? "مستعد ✅" : (slots.p2 ? "بيجهز نفسه.." : "غائب");
+            document.getElementById('p2-ready').className = ready.p2 ? "status-tag ready" : "status-tag";
+
+            // إظهار التصويت فقط لما الاتنين يدوسوا مستعد
+            if (ready.p1 && ready.p2) {
                 document.getElementById('voting-area').classList.remove('hidden');
             }
 
             const v1 = d.votes ? d.votes.p1 : null;
             const v2 = d.votes ? d.votes.p2 : null;
-            
             if (v1 && v2 && v1 === v2) {
                 rRef.child('activeTab').set(v1);
                 rRef.child('gameState').set('playing');
@@ -336,8 +355,8 @@
 
     function clearRoom() {
         if(confirm("تصفير شامل؟ الغرفة هترجع كأنها جديدة!")) {
-            rRef.set({ activeTab: 'war' }); // تصفير الحالة لترجع للبداية
-            showBigMsg("تم السوفت وير بنجاح 🔄");
+            rRef.remove();
+            location.reload();
         }
     }
 </script>
