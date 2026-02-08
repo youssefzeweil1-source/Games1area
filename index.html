@@ -195,6 +195,33 @@
         document.getElementById('ready-btn').classList.add('hidden');
     }
 
+    function resetToLobby() {
+        if(myRole !== 'p1') return;
+        // تصفير كل شيء ما عدا اللاعبين نفسهم
+        rRef.update({
+            gameState: 'readying',
+            ready: null,
+            votes: null,
+            activeTab: 'war',
+            war: {p1:50, p2:50},
+            bomb: null,
+            sh: null,
+            xo: null
+        });
+    }
+
+    function handleGameOver(msg) {
+        showBigMsg(msg);
+        setTimeout(() => {
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('ready-btn').classList.remove('hidden');
+            document.getElementById('lobby').classList.remove('hidden');
+            // إزالة الاختيارات القديمة من شاشة التصويت
+            document.querySelectorAll('.vote-card').forEach(el => el.classList.remove('selected'));
+            resetToLobby();
+        }, 3000);
+    }
+
     function listenLobby() {
         rRef.on('value', snap => {
             const d = snap.val() || {};
@@ -202,22 +229,21 @@
             const ready = d.ready || {};
             const votes = d.votes || {};
             
-            // تحديث لاعب 1
             document.getElementById('p1-slot').className = slots.p1 ? "player-slot active" : "player-slot";
             document.getElementById('p1-ready').innerText = ready.p1 ? "مستعد ✅" : (slots.p1 ? "بيجهز نفسه.." : "غائب");
             document.getElementById('p1-ready').className = ready.p1 ? "status-tag ready" : "status-tag";
             document.getElementById('st-p1').innerText = votes.p1 ? "لاعب 1: " + gameNames[votes.p1] : "لاعب 1: بيفكر..";
 
-            // تحديث لاعب 2
             document.getElementById('p2-slot').className = slots.p2 ? "player-slot active" : "player-slot";
             document.getElementById('p2-ready').innerText = ready.p2 ? "مستعد ✅" : (slots.p2 ? "بيجهز نفسه.." : "غائب");
             document.getElementById('p2-ready').className = ready.p2 ? "status-tag ready" : "status-tag";
             document.getElementById('st-p2').innerText = votes.p2 ? "لاعب 2: " + gameNames[votes.p2] : "لاعب 2: بيفكر..";
 
-            // الانتقال لشاشة التصويت فقط عند استعداد الطرفين
             if (ready.p1 && ready.p2 && d.gameState !== 'playing') {
                 document.getElementById('lobby').classList.add('hidden');
                 document.getElementById('voting-screen').classList.remove('hidden');
+            } else if (d.gameState !== 'playing') {
+                document.getElementById('voting-screen').classList.add('hidden');
             }
 
             const v1 = votes.p1;
@@ -259,11 +285,17 @@
 
         rRef.child('war').on('value', s => {
             const d = s.val() || {p1:50, p2:50};
+            if(d.status === 'done') return;
             const myH = (myRole==='p1'?d.p1:d.p2);
             document.getElementById('my-war').style.height = myH + "%";
             document.getElementById('op-war').style.height = (100-myH) + "%";
-            if(myH >= 100) { showBigMsg(getRandom(wins)); if(myRole==='p1') rRef.child('war').set({p1:50, p2:50}); }
-            else if (myH <= 0) { showBigMsg(getRandom(insults)); }
+            if(myH >= 100) { 
+                rRef.child('war/status').set('done');
+                handleGameOver(getRandom(wins)); 
+            }
+            else if (myH <= 0) { 
+                handleGameOver(getRandom(insults)); 
+            }
         });
 
         rRef.child('bomb').on('value', s => {
@@ -271,8 +303,7 @@
             document.getElementById('bomb-circle').innerText = d.val;
             document.getElementById('bomb-msg').innerText = d.turn===myRole ? "دورك.. لا تفجرها! 💣" : "استنى لما ينفجر 😂";
             if(d.status === 'exploded') {
-                showBigMsg(d.turn===myRole ? getRandom(insults) : getRandom(wins));
-                if(myRole==='p1') setTimeout(()=> rRef.child('bomb').remove(), 3000);
+                handleGameOver(d.turn===myRole ? getRandom(insults) : getRandom(wins));
             }
         });
 
@@ -286,8 +317,7 @@
             const cells = document.querySelectorAll('.cell');
             d.b.forEach((v, i) => { cells[i].innerText = v; cells[i].style.color = (v==='X'?'#0f0':'#f00'); });
             if(d.win) {
-                showBigMsg(d.winRole===myRole ? getRandom(wins) : getRandom(insults));
-                if(myRole==='p1') setTimeout(()=> rRef.child('xo').remove(), 3000);
+                handleGameOver(d.winRole===myRole ? getRandom(wins) : getRandom(insults));
             }
         });
     }
@@ -296,6 +326,7 @@
         if(myRole==='viewer') return;
         rRef.child('war').transaction(d => {
             if(!d) d = {p1:50, p2:50};
+            if(d.status === 'done') return d;
             if(myRole==='p1') { d.p1+=2; d.p2-=2; } else { d.p2+=2; d.p1-=2; }
             return d;
         });
@@ -326,6 +357,7 @@
     }
 
     function renderSh(d) {
+        if (d.status === 'done_finished') return;
         const myC = (myRole==='p1'?d.p1C:d.p2C) || [], opC = (myRole==='p1'?d.p2C:d.p1C) || [];
         const isT = (d.turn === myRole);
         document.getElementById('sh-stat').innerText = isT ? "اسحب ورقة من الضحية" : "بيسحب منك.. يا رب مياخدش الشايب";
@@ -341,15 +373,15 @@
             myB.appendChild(v);
         });
         if(myC.length===0 && opC.length>0 && d.status !== 'done') {
-            showBigMsg("هربت بالسلامة! " + getRandom(wins));
             rRef.child('sh/status').set('done');
+            handleGameOver("هربت بالسلامة! " + getRandom(wins));
         }
     }
 
     function pullSh(idx) {
         if(!canAction) return; canAction = false;
         rRef.child('sh').once('value', s => {
-            let d = s.val(); if(!d || d.turn !== myRole) { canAction=true; return; }
+            let d = s.val(); if(!d || d.turn !== myRole || d.status==='done') { canAction=true; return; }
             let mk = (myRole==='p1'?'p1C':'p2C'), ok = (myRole==='p1'?'p2C':'p1C');
             let ma = [...(d[mk]||[])], oa = [...(d[ok]||[])];
             let pld = oa.splice(idx,1)[0];
