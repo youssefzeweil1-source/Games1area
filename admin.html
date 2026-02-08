@@ -25,6 +25,11 @@
         
         .btn-unlock { background: #0f0; color: black; }
         .btn-unlock:hover { background: #33ff33; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4); }
+
+        /* ستايل زر السوفت وير */
+        .danger-zone { margin-top: 30px; padding-top: 20px; border-top: 2px dashed #222; }
+        .btn-reset { background: #ffcc00; color: black; width: 100%; }
+        .btn-reset:hover { background: #ffe066; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3); }
         
         .btn:active { transform: scale(0.95); }
         
@@ -59,12 +64,19 @@
             <span>🔓</span> فتح اللعبة
         </button>
     </div>
+
+    <div class="danger-zone">
+        <p style="color:#ff003c; font-weight:bold; margin-bottom:10px;">⚠️ منطقة العمليات الحساسة</p>
+        <button class="btn btn-reset" onclick="resetAllRooms()">
+            <span>🔄</span> سوفت وير شامل لكل الغرف
+        </button>
+        <p style="color:#555; font-size:0.7rem; margin-top:10px;">هذا الزر سيقوم بمسح كافة بيانات الغرف واللاعبين حالياً.</p>
+    </div>
 </div>
 
 <div class="footer">DEVELOPED BY ZEWEIL &copy; 2026</div>
 
 <script>
-    // إعدادات Firebase الخاصة بك
     const firebaseConfig = { 
         databaseURL: "https://zeweil-chat-default-rtdb.europe-west1.firebasedatabase.app" 
     };
@@ -76,10 +88,8 @@
         const gameNameText = document.getElementById('game-selector').options[document.getElementById('game-selector').selectedIndex].text;
         const msg = document.getElementById('admin-msg').value;
 
-        // القيمة الافتراضية إذا لم تكتب رسالة
         const finalMsg = msg.trim() || "هذه اللعبة مغلقة حالياً للصيانة.";
 
-        // تحديث قاعدة البيانات
         db.ref('games_status/' + selectedGame).set({
             maintenance: status,
             alertMessage: finalMsg
@@ -89,11 +99,29 @@
             } else {
                 alert(`✅ تم فتح ${gameNameText} بنجاح.`);
             }
-            // مسح حقل الرسالة بعد التنفيذ
             document.getElementById('admin-msg').value = "";
         }).catch((error) => {
             alert("❌ حدث خطأ في الاتصال: " + error.message);
         });
+    }
+
+    // دالة السوفت وير الشامل لكل الغرف
+    function resetAllRooms() {
+        const pass = "حذف";
+        const userInput = prompt("⚠️ تحذير: سيتم حذف جميع الغرف النشطة الآن!\nاكتب كلمة (حذف) للتأكيد:");
+
+        if (userInput === pass) {
+            // المسار الذي يحتوي على كافة الغرف
+            db.ref('final_arena_v4').remove()
+                .then(() => {
+                    alert("✅ تم بنجاح تصفير كافة الغرف وإعادتها للحالة الأصلية.");
+                })
+                .catch((error) => {
+                    alert("❌ فشل التصفير: " + error.message);
+                });
+        } else if (userInput !== null) {
+            alert("⚠️ الكلمة غير صحيحة، لم يتم حذف أي شيء.");
+        }
     }
 </script>
 
