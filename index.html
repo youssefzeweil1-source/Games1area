@@ -35,6 +35,9 @@
         .vote-card { background: rgba(34, 34, 34, 0.9); padding: 15px; border-radius: 15px; margin: 5px; display: inline-block; width: 40%; cursor: pointer; border: 2px solid #444; transition: 0.3s; }
         .vote-card.selected { border-color: var(--main); box-shadow: 0 0 15px var(--main); transform: scale(1.05); }
 
+        /* Status Bar Style */
+        .status-bar { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin: 10px auto; width: 85%; border-left: 4px solid var(--main); display: flex; justify-content: space-around; font-size: 0.85rem; }
+
         /* UI Basics */
         .btn-main { background: var(--main); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); }
         .tabs { display: flex; overflow-x: auto; background: rgba(17, 17, 17, 0.8); padding: 5px; gap: 5px; border-bottom: 2px solid #222; }
@@ -82,14 +85,12 @@
             <span>لاعب 1</span>
             <span id="p1-ready" class="status-tag">في انتظار الدخول</span>
         </div>
-        <div id="p1-vote-display" class="vote-label"></div>
     </div>
     <div id="p2-slot" class="player-slot">
         <div class="slot-top">
             <span>لاعب 2</span>
             <span id="p2-ready" class="status-tag">في انتظار الدخول</span>
         </div>
-        <div id="p2-vote-display" class="vote-label"></div>
     </div>
 
     <button id="ready-btn" class="btn-main" onclick="iamReady()" style="margin-top: 20px;">أنا مستعد! 🔥</button>
@@ -98,8 +99,13 @@
 
 <div id="voting-screen" class="hidden" style="padding-top: 50px;">
     <h2 style="color:var(--shaieb)">صوّتوا للعبة الملحمة 🗳️</h2>
-    <p style="color:#bbb;">لازم تتفقوا على لعبة واحدة!</p>
-    <div id="voting-area" style="margin-top: 20px;">
+    
+    <div class="status-bar" id="status-bar-voting">
+        <div id="st-p1">لاعب 1: لم يقرر..</div>
+        <div id="st-p2">لاعب 2: لم يقرر..</div>
+    </div>
+
+    <div id="voting-area" style="margin-top: 10px;">
         <div class="vote-card" id="v-war" onclick="vote('war')">السرعة ⚡</div>
         <div class="vote-card" id="v-sh" onclick="vote('sh')">الشايب 🤡</div>
         <div class="vote-card" id="v-bomb" onclick="vote('bomb')">القنبلة 💣</div>
@@ -200,13 +206,13 @@
             document.getElementById('p1-slot').className = slots.p1 ? "player-slot active" : "player-slot";
             document.getElementById('p1-ready').innerText = ready.p1 ? "مستعد ✅" : (slots.p1 ? "بيجهز نفسه.." : "غائب");
             document.getElementById('p1-ready').className = ready.p1 ? "status-tag ready" : "status-tag";
-            document.getElementById('p1-vote-display').innerText = votes.p1 ? "صوّت لـ: " + gameNames[votes.p1] : "";
+            document.getElementById('st-p1').innerText = votes.p1 ? "لاعب 1: " + gameNames[votes.p1] : "لاعب 1: بيفكر..";
 
             // تحديث لاعب 2
             document.getElementById('p2-slot').className = slots.p2 ? "player-slot active" : "player-slot";
             document.getElementById('p2-ready').innerText = ready.p2 ? "مستعد ✅" : (slots.p2 ? "بيجهز نفسه.." : "غائب");
             document.getElementById('p2-ready').className = ready.p2 ? "status-tag ready" : "status-tag";
-            document.getElementById('p2-vote-display').innerText = votes.p2 ? "صوّت لـ: " + gameNames[votes.p2] : "";
+            document.getElementById('st-p2').innerText = votes.p2 ? "لاعب 2: " + gameNames[votes.p2] : "لاعب 2: بيفكر..";
 
             // الانتقال لشاشة التصويت فقط عند استعداد الطرفين
             if (ready.p1 && ready.p2 && d.gameState !== 'playing') {
