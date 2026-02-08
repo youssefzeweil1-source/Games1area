@@ -22,7 +22,7 @@
         @keyframes moveBg { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
         /* الشاشات الزجاجية */
-        #setup, #lobby, #game-ui { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
+        #setup, #lobby, #voting-screen, #game-ui { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
         
         /* Lobby Styles */
         .player-slot { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin: 10px auto; width: 80%; border: 2px solid #333; font-weight: bold; display: flex; flex-direction: column; align-items: flex-start; }
@@ -93,9 +93,13 @@
     </div>
 
     <button id="ready-btn" class="btn-main" onclick="iamReady()" style="margin-top: 20px;">أنا مستعد! 🔥</button>
-    
-    <div id="voting-area" class="hidden" style="margin-top: 30px; border-top: 2px solid #222; padding-top: 20px;">
-        <h3 style="color:var(--shaieb)">صوّتوا للعبة الملحمة:</h3>
+    <p id="lobby-wait-msg" style="color: #777; margin-top: 10px;">في انتظار الخصم لتجهيز نفسه...</p>
+</div>
+
+<div id="voting-screen" class="hidden" style="padding-top: 50px;">
+    <h2 style="color:var(--shaieb)">صوّتوا للعبة الملحمة 🗳️</h2>
+    <p style="color:#bbb;">لازم تتفقوا على لعبة واحدة!</p>
+    <div id="voting-area" style="margin-top: 20px;">
         <div class="vote-card" id="v-war" onclick="vote('war')">السرعة ⚡</div>
         <div class="vote-card" id="v-sh" onclick="vote('sh')">الشايب 🤡</div>
         <div class="vote-card" id="v-bomb" onclick="vote('bomb')">القنبلة 💣</div>
@@ -204,19 +208,22 @@
             document.getElementById('p2-ready').className = ready.p2 ? "status-tag ready" : "status-tag";
             document.getElementById('p2-vote-display').innerText = votes.p2 ? "صوّت لـ: " + gameNames[votes.p2] : "";
 
-            if (ready.p1 && ready.p2) {
-                document.getElementById('voting-area').classList.remove('hidden');
+            // الانتقال لشاشة التصويت فقط عند استعداد الطرفين
+            if (ready.p1 && ready.p2 && d.gameState !== 'playing') {
+                document.getElementById('lobby').classList.add('hidden');
+                document.getElementById('voting-screen').classList.remove('hidden');
             }
 
             const v1 = votes.p1;
             const v2 = votes.p2;
-            if (v1 && v2 && v1 === v2) {
+            if (v1 && v2 && v1 === v2 && d.gameState !== 'playing') {
                 rRef.child('activeTab').set(v1);
                 rRef.child('gameState').set('playing');
             }
 
             if (d.gameState === 'playing') {
                 document.getElementById('lobby').classList.add('hidden');
+                document.getElementById('voting-screen').classList.add('hidden');
                 document.getElementById('game-ui').classList.remove('hidden');
                 initXO();
                 startListeners();
