@@ -21,6 +21,27 @@
         }
         @keyframes moveBg { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
+        /* مضاف: ستايل قائمة الموسيقى */
+        #music-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            background: rgba(10, 10, 10, 0.98); border: 3px solid var(--main);
+            padding: 25px; border-radius: 30px; z-index: 9999; width: 280px;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
+        }
+        #music-modal.open { transform: translate(-50%, -50%) scale(1); }
+        .music-option {
+            background: #1a1a1a; border: 2px solid #333; color: white;
+            padding: 15px; margin: 12px 0; border-radius: 15px; cursor: pointer;
+            font-weight: 900; transition: 0.2s;
+        }
+        .music-option:active { transform: scale(0.95); background: var(--main); color: black; }
+        #music-btn {
+            position: fixed; top: 15px; right: 15px; background: var(--main);
+            color: black; border-radius: 10px; padding: 10px 15px;
+            font-weight: bold; cursor: pointer; z-index: 1000; box-shadow: 0 0 15px var(--main);
+        }
+
         /* الشاشات الزجاجية */
         #setup, #lobby, #voting-screen { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
         
@@ -104,6 +125,16 @@
 <body>
 
 <div class="bg-panoramic"></div>
+
+<audio id="bg-music" loop></audio>
+<div id="music-btn" class="hidden" onclick="toggleMusicModal()">الصوت 🎵</div>
+<div id="music-modal">
+    <h3 style="color:var(--main); margin-bottom: 20px;">اختر الموسيقى</h3>
+    <div class="music-option" onclick="changeTrack('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8A%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3', 'موسيقى 1')">موسيقى 1</div>
+    <div class="music-option">موسيقى 2</div>
+    <div class="music-option">موسيقى 3</div>
+    <div onclick="toggleMusicModal()" style="color:#ff003c; cursor:pointer; margin-top:15px; font-weight:bold;">إغلاق</div>
+</div>
 
 <div id="chat-pop-notif">رسالة جديدة! ✉️</div>
 <div id="chat-toggle" onclick="toggleChat()">💬</div>
@@ -215,6 +246,18 @@
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+    // --- مضاف: وظائف الموسيقى ---
+    function toggleMusicModal() { document.getElementById('music-modal').classList.toggle('open'); }
+    function changeTrack(url, name) {
+        if(!url) return;
+        const music = document.getElementById('bg-music');
+        music.src = url;
+        music.volume = 0.5;
+        music.play().catch(e => console.log("تفاعل مطلوب للموسيقى"));
+        if(document.getElementById('music-modal').classList.contains('open')) toggleMusicModal();
+        showBigMsg("تم تشغيل: " + name);
+    }
+
     // --- وظائف الدردشة المعدلة ---
     function toggleChat() {
         const chat = document.getElementById('chat-container');
@@ -230,7 +273,6 @@
     }
 
     function showCenterNotif() {
-        // لا تظهر الإشعار إذا كانت لوحة الدردشة مفتوحة بالفعل
         if(document.getElementById('chat-container').classList.contains('open')) return;
         const pop = document.getElementById('chat-pop-notif');
         pop.classList.add('show');
@@ -254,6 +296,11 @@
             rRef.child(`ready/${myRole}`).onDisconnect().remove();
             rRef.child(`votes/${myRole}`).onDisconnect().remove();
             
+            // مضاف: إظهار زر الموسيقى وتشغيل تراك 1 عند الدخول
+            document.getElementById('music-btn').classList.remove('hidden');
+            const track1 = "https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8A%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3";
+            changeTrack(track1, "موسيقى 1");
+
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('lobby').classList.remove('hidden');
             listenLobby();
@@ -326,7 +373,6 @@
             }
         });
 
-        // Chat Listener المُعدل
         rRef.child('chat').limitToLast(1).on('child_added', snap => {
             const m = snap.val();
             const div = document.createElement('div');
@@ -336,7 +382,6 @@
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
             
-            // إظهار الإشعار إذا كانت الرسالة من الخصم
             if(m.sender !== myRole) {
                 document.getElementById('chat-toggle').classList.add('new-msg');
                 showCenterNotif();
