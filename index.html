@@ -30,7 +30,6 @@
         .player-slot.active { border-color: var(--main); background: rgba(0,255,0,0.1); color: var(--main); }
         .status-tag { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: #333; color: #fff; }
         .status-tag.ready { background: var(--main); color: #000; }
-        .vote-label { font-size: 0.7rem; color: var(--shaieb); margin-top: 5px; font-weight: normal; }
 
         .vote-card { background: rgba(34, 34, 34, 0.9); padding: 15px; border-radius: 15px; margin: 5px; display: inline-block; width: 40%; cursor: pointer; border: 2px solid #444; transition: 0.3s; }
         .vote-card.selected { border-color: var(--main); box-shadow: 0 0 15px var(--main); transform: scale(1.05); }
@@ -101,8 +100,8 @@
     <h2 style="color:var(--shaieb)">صوّتوا للعبة الملحمة 🗳️</h2>
     
     <div class="status-bar" id="status-bar-voting">
-        <div id="st-p1">لاعب 1: لم يقرر..</div>
-        <div id="st-p2">لاعب 2: لم يقرر..</div>
+        <div id="st-p1">لاعب 1: بيفكر..</div>
+        <div id="st-p2">لاعب 2: بيفكر..</div>
     </div>
 
     <div id="voting-area" style="margin-top: 10px;">
@@ -114,27 +113,27 @@
 </div>
 
 <div id="game-ui" class="hidden">
-    <div class="tabs">
+    <div class="tabs hidden" id="game-tabs">
         <div id="t-war" class="tab active" onclick="switchUI('war')">السرعة ⚡</div>
         <div id="t-sh" class="tab" onclick="switchUI('sh')">الشايب 🤡</div>
         <div id="t-bomb" class="tab" onclick="switchUI('bomb')">القنبلة 💣</div>
         <div id="t-xo" class="tab" onclick="switchUI('xo')">XO ⭕</div>
     </div>
 
-    <div id="war-ui">
+    <div id="war-ui" style="margin-top: 20px;">
         <div id="war-container" onclick="tapWar(event)">
             <div id="op-war" class="war-half" style="background:var(--danger); height:50%;">الضحية</div>
             <div id="my-war" class="war-half" style="background:var(--main); height:50%;">الوحش</div>
         </div>
     </div>
 
-    <div id="sh-ui" class="hidden">
+    <div id="sh-ui" class="hidden" style="margin-top: 20px;">
         <h3 id="sh-stat" style="color:var(--shaieb); background: rgba(0,0,0,0.5); display: inline-block; padding: 5px 15px; border-radius: 10px;">...</h3>
         <div id="op-area"></div>
         <div id="my-area" style="margin-top:20px;"></div>
     </div>
 
-    <div id="bomb-ui" class="hidden">
+    <div id="bomb-ui" class="hidden" style="margin-top: 20px;">
         <h2 id="bomb-msg">دور مين؟</h2>
         <div id="bomb-circle">0</div>
         <div id="bomb-btns">
@@ -144,7 +143,7 @@
         </div>
     </div>
 
-    <div id="xo-ui" class="hidden">
+    <div id="xo-ui" class="hidden" style="margin-top: 20px;">
         <h3 id="xo-stat" style="color:var(--main); background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px;">...</h3>
         <div class="xo-grid" id="xo-board"></div>
     </div>
@@ -197,7 +196,6 @@
 
     function resetToLobby() {
         if(myRole !== 'p1') return;
-        // تصفير كل شيء ما عدا اللاعبين نفسهم
         rRef.update({
             gameState: 'readying',
             ready: null,
@@ -214,9 +212,9 @@
         showBigMsg(msg);
         setTimeout(() => {
             document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('game-tabs').classList.add('hidden'); // إخفاء التابات لللوبي القادم
             document.getElementById('ready-btn').classList.remove('hidden');
             document.getElementById('lobby').classList.remove('hidden');
-            // إزالة الاختيارات القديمة من شاشة التصويت
             document.querySelectorAll('.vote-card').forEach(el => el.classList.remove('selected'));
             resetToLobby();
         }, 3000);
@@ -257,6 +255,7 @@
                 document.getElementById('lobby').classList.add('hidden');
                 document.getElementById('voting-screen').classList.add('hidden');
                 document.getElementById('game-ui').classList.remove('hidden');
+                document.getElementById('game-tabs').classList.add('hidden'); // هنا الإخفاء الفعلي للتابات أثناء اللعب
                 initXO();
                 startListeners();
             }
