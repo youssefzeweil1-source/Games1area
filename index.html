@@ -59,8 +59,11 @@
         .status-tag { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: #333; color: #fff; }
         .status-tag.ready { background: var(--main); color: #000; }
 
-        .vote-card { background: rgba(34, 34, 34, 0.9); padding: 15px; border-radius: 15px; margin: 5px; display: inline-block; width: 40%; cursor: pointer; border: 2px solid #444; transition: 0.3s; }
-        .vote-card.selected { border-color: var(--main); box-shadow: 0 0 15px var(--main); transform: scale(1.05); }
+        /* تعديل التصويت ليشمل الصور */
+        .vote-card { background: rgba(34, 34, 34, 0.9); padding: 10px; border-radius: 20px; margin: 8px; display: inline-block; width: 42%; cursor: pointer; border: 2px solid #444; transition: 0.3s; overflow: hidden; }
+        .vote-card.selected { border-color: var(--main); box-shadow: 0 0 20px var(--main); transform: scale(1.05); }
+        .vote-img { width: 100%; height: 80px; object-fit: cover; border-radius: 12px; margin-bottom: 8px; display: block; background: #222; }
+        .vote-name { font-weight: 900; font-size: 0.9rem; }
 
         /* Status Bar Style */
         .status-bar { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin: 10px auto; width: 85%; border-left: 4px solid var(--main); display: flex; justify-content: space-around; font-size: 0.85rem; }
@@ -177,7 +180,7 @@
     <p id="lobby-wait-msg" style="color: #777; margin-top: 10px;">في انتظار الخصم لتجهيز نفسه...</p>
 </div>
 
-<div id="voting-screen" class="hidden" style="padding-top: 50px;">
+<div id="voting-screen" class="hidden" style="padding-top: 30px;">
     <h2 style="color:var(--shaieb)">صوّتوا للعبة الملحمة 🗳️</h2>
     
     <div class="status-bar" id="status-bar-voting">
@@ -186,10 +189,22 @@
     </div>
 
     <div id="voting-area" style="margin-top: 10px;">
-        <div class="vote-card" id="v-war" onclick="vote('war')">السرعة ⚡</div>
-        <div class="vote-card" id="v-sh" onclick="vote('sh')">الشايب 🤡</div>
-        <div class="vote-card" id="v-bomb" onclick="vote('bomb')">القنبلة 💣</div>
-        <div class="vote-card" id="v-xo" onclick="vote('xo')">XO ⭕</div>
+        <div class="vote-card" id="v-war" onclick="vote('war')">
+            <img src="https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/war.png" class="vote-img">
+            <div class="vote-name">السرعة ⚡</div>
+        </div>
+        <div class="vote-card" id="v-sh" onclick="vote('sh')">
+            <img src="https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/sh.png" class="vote-img">
+            <div class="vote-name">الشايب 🤡</div>
+        </div>
+        <div class="vote-card" id="v-bomb" onclick="vote('bomb')">
+            <img src="https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/bomb.png" class="vote-img">
+            <div class="vote-name">القنبلة 💣</div>
+        </div>
+        <div class="vote-card" id="v-xo" onclick="vote('xo')">
+            <img src="https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/xo.png" class="vote-img">
+            <div class="vote-name">XO ⭕</div>
+        </div>
     </div>
 </div>
 
