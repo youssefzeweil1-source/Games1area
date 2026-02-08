@@ -10,22 +10,26 @@
     <style>
         :root { --main: #0f0; --shaieb: #ffcc00; --bg: #080808; --danger: #ff003c; --card-back: #1e3799; }
         
-        /* تأثير الخلفية البانورامية - تم تعديل الرابط ليسحب من جيت هوب مباشرة */
         body { background: #000; color: white; font-family: 'Cairo', sans-serif; margin: 0; text-align: center; overflow: hidden; touch-action: manipulation; }
         
         .bg-panoramic {
             position: fixed; top: 0; left: 0; width: 400%; height: 100%;
-            /* تم التحديث لاستخدام صورتك من GitHub بعد ما خليتها ببلك */
             background: url('https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/bg.png') repeat-x;
             background-size: contain; z-index: -1;
             animation: moveBg 60s linear infinite alternate;
-            filter: brightness(0.3); /* تعتيم بسيط عشان الكلام يبان */
+            filter: brightness(0.3);
         }
         @keyframes moveBg { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
         /* الشاشات الزجاجية */
-        #setup, #game-ui { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
+        #setup, #lobby, #game-ui { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
         
+        /* Lobby Styles */
+        .player-slot { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin: 10px auto; width: 80%; border: 2px solid #333; font-weight: bold; }
+        .player-slot.active { border-color: var(--main); background: rgba(0,255,0,0.1); color: var(--main); }
+        .vote-card { background: rgba(34, 34, 34, 0.9); padding: 15px; border-radius: 15px; margin: 5px; display: inline-block; width: 40%; cursor: pointer; border: 2px solid #444; transition: 0.3s; }
+        .vote-card.selected { border-color: var(--main); box-shadow: 0 0 15px var(--main); transform: scale(1.05); }
+
         /* UI Basics */
         .btn-main { background: var(--main); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); }
         .tabs { display: flex; overflow-x: auto; background: rgba(17, 17, 17, 0.8); padding: 5px; gap: 5px; border-bottom: 2px solid #222; }
@@ -63,6 +67,21 @@
     <p style="color:#bbb;">أسرع واحد بيكسب، والأخيب ببيتمسخر!</p>
     <input type="text" id="room" placeholder="كود الغرفة" style="padding:15px; border-radius:15px; border:1px solid #333; background:rgba(0,0,0,0.7); color:white; width:200px; text-align:center;"><br><br>
     <button class="btn-main" onclick="joinRoom()">دخول الساحة</button>
+</div>
+
+<div id="lobby" class="hidden" style="padding-top: 50px;">
+    <h2 style="color:var(--main)">غرفة الانتظار ⏳</h2>
+    <div id="p1-slot" class="player-slot">لاعب 1: في انتظار الخصم...</div>
+    <div id="p2-slot" class="player-slot">لاعب 2: في انتظار الخصم...</div>
+    
+    <div id="voting-area" class="hidden" style="margin-top: 30px;">
+        <h3 style="color:var(--shaieb)">صوّت للعبة اللي تعجبك:</h3>
+        <div class="vote-card" id="v-war" onclick="vote('war')">السرعة ⚡</div>
+        <div class="vote-card" id="v-sh" onclick="vote('sh')">الشايب 🤡</div>
+        <div class="vote-card" id="v-bomb" onclick="vote('bomb')">القنبلة 💣</div>
+        <div class="vote-card" id="v-xo" onclick="vote('xo')">XO ⭕</div>
+    </div>
+    <p id="wait-msg" style="color:#777; margin-top: 20px;">مستنيين التصويت يخلص...</p>
 </div>
 
 <div id="game-ui" class="hidden">
@@ -132,12 +151,51 @@
             myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
             const mySlotRef = rRef.child(`slots/${myRole}`);
             mySlotRef.onDisconnect().remove();
-            rRef.child('slots').on('value', ss => { if(!ss.exists()) rRef.onDisconnect().remove(); });
+            rRef.child('slots').on('value', ss => { if(!ss.exists()) rRef.remove(); });
+            
             document.getElementById('setup').classList.add('hidden');
-            document.getElementById('game-ui').classList.remove('hidden');
-            initXO();
-            startListeners();
+            document.getElementById('lobby').classList.remove('hidden');
+            listenLobby();
         });
+    }
+
+    // نظام اللوبي المدمج
+    function listenLobby() {
+        rRef.on('value', snap => {
+            const d = snap.val() || {};
+            const slots = d.slots || {};
+            
+            document.getElementById('p1-slot').innerText = slots.p1 ? "لاعب 1: متصل ✅" : "لاعب 1: في انتظار الخصم...";
+            document.getElementById('p1-slot').className = slots.p1 ? "player-slot active" : "player-slot";
+            document.getElementById('p2-slot').innerText = slots.p2 ? "لاعب 2: متصل ✅" : "لاعب 2: في انتظار الخصم...";
+            document.getElementById('p2-slot').className = slots.p2 ? "player-slot active" : "player-slot";
+
+            if (slots.p1 && slots.p2) {
+                document.getElementById('voting-area').classList.remove('hidden');
+            }
+
+            const v1 = d.votes ? d.votes.p1 : null;
+            const v2 = d.votes ? d.votes.p2 : null;
+            
+            if (v1 && v2 && v1 === v2) {
+                rRef.child('activeTab').set(v1);
+                rRef.child('gameState').set('playing');
+            }
+
+            if (d.gameState === 'playing') {
+                document.getElementById('lobby').classList.add('hidden');
+                document.getElementById('game-ui').classList.remove('hidden');
+                initXO();
+                startListeners();
+            }
+        });
+    }
+
+    function vote(game) {
+        if (myRole === 'viewer') return;
+        rRef.child('votes').update({ [myRole]: game });
+        document.querySelectorAll('.vote-card').forEach(el => el.classList.remove('selected'));
+        document.getElementById('v-' + game).classList.add('selected');
     }
 
     function switchUI(t) { rRef.update({ activeTab: t }); }
@@ -278,7 +336,7 @@
 
     function clearRoom() {
         if(confirm("تصفير شامل؟ الغرفة هترجع كأنها جديدة!")) {
-            rRef.child('sh').remove(); rRef.child('bomb').remove(); rRef.child('xo').remove(); rRef.child('war').remove();
+            rRef.set({ activeTab: 'war' }); // تصفير الحالة لترجع للبداية
             showBigMsg("تم السوفت وير بنجاح 🔄");
         }
     }
