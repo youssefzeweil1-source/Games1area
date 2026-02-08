@@ -24,7 +24,7 @@
         #music-modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
             background: rgba(10, 10, 10, 0.98); border: 3px solid var(--main);
-            padding: 25px; border-radius: 30px; z-index: 9999; width: 280px;
+            padding: 25px; border-radius: 30px; z-index: 100001; width: 280px;
             transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
         }
@@ -35,10 +35,12 @@
             font-weight: 900; transition: 0.2s;
         }
         .music-option:active { transform: scale(0.95); background: var(--main); color: black; }
+        
         #music-btn {
             position: fixed; top: 15px; right: 15px; background: var(--main);
             color: black; border-radius: 10px; padding: 10px 15px;
-            font-weight: bold; cursor: pointer; z-index: 1000; box-shadow: 0 0 15px var(--main);
+            font-weight: bold; cursor: pointer; z-index: 100000; /* ضمان الظهور فوق كل شيء */
+            box-shadow: 0 0 15px var(--main);
         }
 
         #setup, #lobby, #voting-screen { position: relative; z-index: 1; backdrop-filter: blur(5px); min-height: 100vh; }
@@ -88,15 +90,14 @@
         #dice-val { display: inline-block; width: 50px; height: 50px; background: white; color: black; line-height: 50px; font-size: 1.8rem; font-weight: 900; border-radius: 10px; border: 3px solid var(--main); vertical-align: middle; }
 
         .hidden { display: none !important; }
-        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px 40px; border-radius: 25px; font-weight: 900; font-size: 1.4rem; z-index: 10000; text-align: center; border: 5px solid var(--main); line-height: 1.4; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
+        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px 40px; border-radius: 25px; font-weight: 900; font-size: 1.4rem; z-index: 100005; text-align: center; border: 5px solid var(--main); line-height: 1.4; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
 
-        /* --- تعديلات الشات الجانبية المطلوبة --- */
         #chat-container { 
             position: fixed; bottom: 85px; left: 15px; width: 300px; height: 420px; 
             background: rgba(0,0,0,0.92); border: 2.5px solid var(--main); border-radius: 25px; 
             z-index: 1000; display: flex; flex-direction: column; 
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform: translateX(-110%) scale(0.9); /* يبدأ من خارج الشاشة يساراً */
+            transform: translateX(-110%) scale(0.9);
             opacity: 0; transform-origin: left bottom; 
             backdrop-filter: blur(15px); box-shadow: 0 15px 50px rgba(0,0,0,0.8);
             pointer-events: none;
@@ -129,13 +130,17 @@
 <div class="bg-panoramic"></div>
 
 <audio id="bg-music" loop></audio>
-<div id="music-btn" class="hidden" onclick="toggleMusicModal()">الصوت 🎵</div>
+
+<div id="music-btn" class="hidden" onclick="toggleMusicModal()">الموسيقى 🎵</div>
+
 <div id="music-modal">
-    <h3 style="color:var(--main); margin-bottom: 20px;">اختر الموسيقى</h3>
-    <div class="music-option" onclick="changeTrack('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8A%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3', 'موسيقى 1')">موسيقى 1</div>
-    <div class="music-option">موسيقى 2</div>
-    <div class="music-option">موسيقى 3</div>
-    <div onclick="toggleMusicModal()" style="color:#ff003c; cursor:pointer; margin-top:15px; font-weight:bold;">إغلاق</div>
+    <h3 style="color:var(--main); margin-bottom: 20px;">إعدادات الصوت</h3>
+    <div class="music-option" onclick="changeTrack('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8A%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3', 'موسيقى 1')">تشغيل: موسيقى 1 🎵</div>
+    
+    <div class="music-option" onclick="stopMusic()" style="border-color: var(--danger); color: var(--danger);">إيقاف الموسيقى ⏹️</div>
+    
+    <div class="music-option">موسيقى 2 (قريباً)</div>
+    <div onclick="toggleMusicModal()" style="color:#777; cursor:pointer; margin-top:15px; font-weight:bold;">إغلاق القائمة</div>
 </div>
 
 <div id="chat-pop-notif">رسالة جديدة! ✉️</div>
@@ -212,14 +217,6 @@
 </div>
 
 <div id="game-ui" class="hidden">
-    <div class="tabs hidden" id="game-tabs">
-        <div id="t-war" class="tab active">السرعة ⚡</div>
-        <div id="t-sh" class="tab">الشايب 🤡</div>
-        <div id="t-bomb" class="tab">القنبلة 💣</div>
-        <div id="t-xo" class="tab">XO ⭕</div>
-        <div id="t-ludo" class="tab">لودو 🎲</div>
-    </div>
-
     <div id="war-ui" class="hidden" style="width: 100%;">
         <div id="war-container" onclick="tapWar(event)">
             <div id="op-war" class="war-half" style="background:var(--danger); height:50%;">الضحية</div>
@@ -265,9 +262,29 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- إعدادات الصوت والإشعارات الجديدة ---
     const messageSound = new Audio('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/mixkit-software-interface-start-2574.wav');
     if ("Notification" in window) Notification.requestPermission();
+
+    // --- منطق الموسيقى المحدث ---
+    function toggleMusicModal() { document.getElementById('music-modal').classList.toggle('open'); }
+    
+    function changeTrack(url, name) {
+        if(!url) return;
+        const music = document.getElementById('bg-music');
+        music.src = url;
+        music.volume = 0.5;
+        music.play().catch(e => console.log("تفاعل مطلوب"));
+        if(document.getElementById('music-modal').classList.contains('open')) toggleMusicModal();
+        showBigMsg("تم تشغيل: " + name);
+    }
+
+    function stopMusic() {
+        const music = document.getElementById('bg-music');
+        music.pause();
+        music.currentTime = 0;
+        if(document.getElementById('music-modal').classList.contains('open')) toggleMusicModal();
+        showBigMsg("تم إيقاف الموسيقى ⏹️");
+    }
 
     function backToVoting() {
         const ls = document.getElementById('lock-screen-admin');
@@ -301,18 +318,6 @@
         if (s && s.maintenance) showAdminLock("ARENA مغلقة", s.alertMessage || "نعمل على تحديثات جديدة");
     });
 
-    function monitorCurrentGame(gameKey) {
-        db.ref('games_status/' + gameKey).on('value', snap => {
-            const s = snap.val();
-            if (s && s.maintenance) {
-                showAdminLock(`لعبة ${gameNames[gameKey]} مغلقة`, s.alertMessage || "تم إغلاق هذه اللعبة مؤقتاً");
-            } else {
-                const ls = document.getElementById('lock-screen-admin');
-                if (ls) { ls.remove(); document.body.style.overflow = 'auto'; }
-            }
-        });
-    }
-
     let rID, mID, rRef, myRole = "", canAction = true;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
     const gameNames = { 'war': 'السرعة ⚡', 'sh': 'الشايب 🤡', 'bomb': 'القنبلة 💣', 'xo': 'XO ⭕', 'ludo': 'لودو 🎲' };
@@ -322,17 +327,6 @@
     const wins = ["جلدته جلد! 🔥", "مستواك عالمي يا وحش 🦁", "الخصم بيعيط في الزاوية 😭", "إيه السيطرة دي يا ملك! 👑", "سهلة أوي..  اللي بعددددددددده 😎"];
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-    function toggleMusicModal() { document.getElementById('music-modal').classList.toggle('open'); }
-    function changeTrack(url, name) {
-        if(!url) return;
-        const music = document.getElementById('bg-music');
-        music.src = url;
-        music.volume = 0.5;
-        music.play().catch(e => console.log("تفاعل مطلوب"));
-        if(document.getElementById('music-modal').classList.contains('open')) toggleMusicModal();
-        showBigMsg("تم تشغيل: " + name);
-    }
 
     function toggleChat() {
         const chat = document.getElementById('chat-container');
@@ -436,34 +430,17 @@
             }
         });
 
-        // --- مراقب الشات المحدث بالصوت والإشعارات ---
         rRef.child('chat').limitToLast(1).on('child_added', snap => {
             const m = snap.val();
-            
-            // إضافة الرسالة للواجهة
             const div = document.createElement('div');
             div.className = `msg ${m.sender === myRole ? 'me' : 'him'}`;
             div.innerText = m.text;
             const box = document.getElementById('chat-messages');
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-            
-            // إذا كانت الرسالة من الخصم، قم بتشغيل الصوت والإشعارات
+            if(box) { box.appendChild(div); box.scrollTop = box.scrollHeight; }
             if(m.sender !== myRole) {
-                // 1. تشغيل الصوت الخاص بك
                 messageSound.play().catch(e => console.log("الصوت محجوب"));
-                
-                // 2. تغيير لون الزر وإظهار إشعار المركز
                 document.getElementById('chat-toggle').classList.add('new-msg');
                 showCenterNotif();
-                
-                // 3. إرسال إشعار المتصفح
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification("Arena Chat ✉️", {
-                        body: `رسالة من الخصم: ${m.text}`,
-                        icon: 'https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/bg.png'
-                    });
-                }
             }
         });
     }
@@ -478,9 +455,12 @@
     function startListeners() {
         rRef.child('activeTab').on('value', s => {
             const t = s.val() || 'war';
-            ['war','sh','bomb','xo','ludo'].forEach(id => document.getElementById(id+'-ui').classList.add('hidden'));
-            document.getElementById(t+'-ui').classList.remove('hidden');
-            monitorCurrentGame(t);
+            ['war','sh','bomb','xo','ludo'].forEach(id => {
+               const el = document.getElementById(id+'-ui');
+               if(el) el.classList.add('hidden');
+            });
+            const activeUi = document.getElementById(t+'-ui');
+            if(activeUi) activeUi.classList.remove('hidden');
         });
 
         rRef.child('war').on('value', s => {
