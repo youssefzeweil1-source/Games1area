@@ -65,10 +65,9 @@
         .status-bar { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin: 10px auto; width: 85%; border-left: 4px solid var(--main); display: flex; justify-content: space-around; font-size: 0.85rem; }
 
         .btn-main { background: var(--main); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); }
-        .tabs { display: flex; width: 100%; background: rgba(17, 17, 17, 0.8); padding: 5px; gap: 5px; border-bottom: 2px solid #222; position: fixed; top: 0; }
-
+        
         #war-container { width: 100vw; height: 100vh; margin: 0; border: none; border-radius: 0; overflow: hidden; display: flex; flex-direction: column; }
-        .war-half { transition: height 0.05s linear; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 2.5rem; text-shadow: 0 0 15px rgba(0,0,0,0.7); }
+        .war-half { transition: height 0.05s linear; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 2.5rem; text-shadow: 0 0 15px rgba(0,0,0,0.7); pointer-events: none; }
 
         #bomb-circle { width: 180px; height: 180px; border-radius: 50%; border: 10px solid var(--danger); margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; box-shadow: 0 0 40px var(--danger); background: rgba(0,0,0,0.6); }
         .num-btn { background: #222; border: 1px solid #444; color: white; padding: 20px 30px; border-radius: 15px; font-size: 2rem; margin: 10px; }
@@ -133,9 +132,8 @@
 
 <div id="music-modal">
     <h3 style="color:var(--main); margin-bottom: 20px;">إعدادات الصوت</h3>
-    <div class="music-option" onclick="changeTrack('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8A%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3', 'موسيقى 1')">تشغيل: موسيقى 1 🎵</div>
+    <div class="music-option" onclick="changeTrack('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8I%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3', 'موسيقى 1')">تشغيل: موسيقى 1 🎵</div>
     <div class="music-option" onclick="stopMusic()" style="border-color: var(--danger); color: var(--danger);">إيقاف الموسيقى ⏹️</div>
-    <div class="music-option">موسيقى 2 (قريباً)</div>
     <div onclick="toggleMusicModal()" style="color:#777; cursor:pointer; margin-top:15px; font-weight:bold;">إغلاق القائمة</div>
 </div>
 
@@ -374,6 +372,7 @@
             if (votes.p1 && votes.p2 && votes.p1 === votes.p2 && d.gameState !== 'playing') {
                 rRef.child('activeTab').set(votes.p1);
                 rRef.child('gameState').set('playing');
+                if(votes.p1 === 'war') rRef.child('war').set({p1:50, p2:50, status:'playing'});
             }
 
             if (d.gameState === 'playing') {
@@ -420,13 +419,18 @@
         });
 
         rRef.child('war').on('value', s => {
-            const d = s.val() || {p1:50, p2:50, status:'playing'};
-            if(d.status === 'done') return;
+            const d = s.val();
+            if(!d || d.status === 'done') return;
             const myH = (myRole==='p1'?d.p1:d.p2);
             document.getElementById('my-war').style.height = myH + "%";
             document.getElementById('op-war').style.height = (100-myH) + "%";
-            if(myH >= 100) { rRef.child('war/status').set('done'); handleGameOver(getRandom(wins)); }
-            else if (myH <= 0) { rRef.child('war/status').set('done'); handleGameOver(getRandom(insults)); }
+            if(myH >= 100) { 
+                rRef.child('war/status').set('done'); 
+                handleGameOver(getRandom(wins)); 
+            } else if (myH <= 0) {
+                rRef.child('war/status').set('done');
+                handleGameOver(getRandom(insults));
+            }
         });
 
         rRef.child('bomb').on('value', s => {
@@ -458,13 +462,24 @@
     }
 
     function tapWar(e) {
-        if(myRole==='viewer') return;
+        if(myRole==='viewer' || !rRef) return;
         rRef.child('war').transaction(d => {
             if(!d) d = {p1:50, p2:50, status:'playing'};
             if(d.status === 'done') return d;
-            if(myRole==='p1') { d.p1 += 2; d.p2 -= 2; } else { d.p2 += 2; d.p1 -= 2; }
+            
+            if(myRole === 'p1') {
+                d.p1 = (d.p1 || 50) + 3;
+                d.p2 = (d.p2 || 50) - 3;
+            } else {
+                d.p2 = (d.p2 || 50) + 3;
+                d.p1 = (d.p1 || 50) - 3;
+            }
+            
             if(d.p1 >= 100) { d.p1 = 100; d.p2 = 0; d.status = 'done'; }
             if(d.p2 >= 100) { d.p2 = 100; d.p1 = 0; d.status = 'done'; }
+            if(d.p1 <= 0) { d.p1 = 0; d.p2 = 100; d.status = 'done'; }
+            if(d.p2 <= 0) { d.p2 = 0; d.p1 = 100; d.status = 'done'; }
+            
             return d;
         });
     }
@@ -486,7 +501,6 @@
         let shaiebIdx = Math.floor(Math.random() * 52);
         deck.splice(shaiebIdx, 1); 
         deck.push({r:'SHAIEB', s:'🤡'});
-        
         deck = deck.sort(() => Math.random() - 0.5);
 
         const removePairs = (arr) => {
@@ -503,12 +517,9 @@
             return result;
         };
 
-        let p1Cards = deck.slice(0, 26);
-        let p2Cards = deck.slice(26);
-
         rRef.child('sh').set({ 
-            p1C: removePairs(p1Cards), 
-            p2C: removePairs(p2Cards), 
+            p1C: removePairs(deck.slice(0, 26)), 
+            p2C: removePairs(deck.slice(26)), 
             turn: 'p1',
             status: 'playing'
         });
@@ -533,7 +544,7 @@
             myB.appendChild(v);
         });
 
-        if(myC.length === 0 && d.status === 'playing') {
+        if(myC.length === 0 && d.status === 'playing' && opC.length > 0) {
             rRef.child('sh/status').set('done');
             handleGameOver("هربت بالسلامة! " + getRandom(wins));
         }
@@ -545,17 +556,10 @@
             let d = s.val(); if(!d || d.turn !== myRole || d.status !== 'playing') { canAction=true; return; }
             let mk = (myRole==='p1'?'p1C':'p2C'), ok = (myRole==='p1'?'p2C':'p1C');
             let ma = [...(d[mk]||[])], oa = [...(d[ok]||[])];
-            
             let pld = oa.splice(idx,1)[0];
             let pi = ma.findIndex(c => c.r === pld.r && c.r !== 'SHAIEB');
-            
             if(pi !== -1) ma.splice(pi,1); else ma.push(pld);
-            
-            rRef.child('sh').update({ 
-                [mk]: ma, 
-                [ok]: oa, 
-                turn: (myRole==='p1'?'p2':'p1') 
-            }).then(() => setTimeout(() => canAction=true, 600));
+            rRef.child('sh').update({ [mk]: ma, [ok]: oa, turn: (myRole==='p1'?'p2':'p1') }).then(() => setTimeout(() => canAction=true, 600));
         });
     }
 
