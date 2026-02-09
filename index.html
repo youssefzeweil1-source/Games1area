@@ -39,7 +39,7 @@
         #music-btn {
             position: fixed; top: 15px; right: 15px; background: var(--main);
             color: black; border-radius: 10px; padding: 10px 15px;
-            font-weight: bold; cursor: pointer; z-index: 100000; /* ضمان الظهور فوق كل شيء */
+            font-weight: bold; cursor: pointer; z-index: 100000; 
             box-shadow: 0 0 15px var(--main);
         }
 
@@ -73,7 +73,7 @@
         #bomb-circle { width: 180px; height: 180px; border-radius: 50%; border: 10px solid var(--danger); margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; box-shadow: 0 0 40px var(--danger); background: rgba(0,0,0,0.6); }
         .num-btn { background: #222; border: 1px solid #444; color: white; padding: 20px 30px; border-radius: 15px; font-size: 2rem; margin: 10px; }
 
-        .card { width: 60px; height: 90px; background: white; color: black; border-radius: 8px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; margin: 5px; font-size: 1.1rem; border: 1px solid #ccc; }
+        .card { width: 60px; height: 90px; background: white; color: black; border-radius: 8px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; margin: 5px; font-size: 1.1rem; border: 1px solid #ccc; position: relative; }
         .card.back { background: var(--card-back); color: transparent; border: 2px solid #fff; }
         .card.red { color: #ff003c; }
         .card.shaieb { background: var(--danger); color: white; box-shadow: 0 0 10px red; }
@@ -128,17 +128,13 @@
 <body>
 
 <div class="bg-panoramic"></div>
-
 <audio id="bg-music" loop></audio>
-
 <div id="music-btn" class="hidden" onclick="toggleMusicModal()">الموسيقى 🎵</div>
 
 <div id="music-modal">
     <h3 style="color:var(--main); margin-bottom: 20px;">إعدادات الصوت</h3>
     <div class="music-option" onclick="changeTrack('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8A%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3', 'موسيقى 1')">تشغيل: موسيقى 1 🎵</div>
-    
     <div class="music-option" onclick="stopMusic()" style="border-color: var(--danger); color: var(--danger);">إيقاف الموسيقى ⏹️</div>
-    
     <div class="music-option">موسيقى 2 (قريباً)</div>
     <div onclick="toggleMusicModal()" style="color:#777; cursor:pointer; margin-top:15px; font-weight:bold;">إغلاق القائمة</div>
 </div>
@@ -166,7 +162,6 @@
 
 <div id="lobby" class="hidden" style="padding-top: 50px;">
     <h2 style="color:var(--main)">غرفة الاستعداد ⚔️</h2>
-    
     <div id="p1-slot" class="player-slot">
         <div class="slot-top">
             <span>لاعب 1</span>
@@ -179,19 +174,16 @@
             <span id="p2-ready" class="status-tag">في انتظار الدخول</span>
         </div>
     </div>
-
     <button id="ready-btn" class="btn-main" onclick="iamReady()" style="margin-top: 20px;">أنا مستعد! </button>
     <p id="lobby-wait-msg" style="color: #777; margin-top: 10px;">في انتظار الخصم لتجهيز نفسه...</p>
 </div>
 
 <div id="voting-screen" class="hidden" style="padding-top: 30px;">
     <h2 style="color:var(--shaieb)">صوّتوا للعبة الملحمة 🗳️</h2>
-    
     <div class="status-bar" id="status-bar-voting">
         <div id="st-p1">لاعب 1: بيفكر..</div>
         <div id="st-p2">لاعب 2: بيفكر..</div>
     </div>
-
     <div id="voting-area" style="margin-top: 10px;">
         <div class="vote-card" id="v-war" onclick="vote('war')">
             <img src="https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/war.png" class="vote-img">
@@ -263,9 +255,7 @@
     const db = firebase.database();
 
     const messageSound = new Audio('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/mixkit-software-interface-start-2574.wav');
-    if ("Notification" in window) Notification.requestPermission();
 
-    // --- منطق الموسيقى المحدث ---
     function toggleMusicModal() { document.getElementById('music-modal').classList.toggle('open'); }
     
     function changeTrack(url, name) {
@@ -285,38 +275,6 @@
         if(document.getElementById('music-modal').classList.contains('open')) toggleMusicModal();
         showBigMsg("تم إيقاف الموسيقى ⏹️");
     }
-
-    function backToVoting() {
-        const ls = document.getElementById('lock-screen-admin');
-        if (ls) ls.remove();
-        document.body.style.overflow = 'auto';
-        document.getElementById('game-ui').classList.add('hidden');
-        document.getElementById('voting-screen').classList.remove('hidden');
-        document.querySelectorAll('.vote-card').forEach(el => el.classList.remove('selected'));
-        if(myRole === 'p1') {
-            rRef.update({ gameState: 'readying', activeTab: 'war' });
-        }
-    }
-
-    function showAdminLock(title, msg) {
-        if (document.getElementById('lock-screen-admin')) return;
-        const lock = document.createElement('div');
-        lock.id = 'lock-screen-admin';
-        lock.style = "height:100vh; width:100vw; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#000; color:white; font-family:Cairo; text-align:center; padding:20px; position:fixed; top:0; left:0; z-index:999999;";
-        lock.innerHTML = `
-            <div style="font-size: 80px; margin-bottom: 20px;">⚠️</div>
-            <h1 style="color:#ff003c; font-size:2.5rem; margin-bottom:10px;">${title}</h1>
-            <p style="font-size:1.5rem; background:#111; padding:20px; border-radius:15px; border:1px solid #333; max-width:80%;">${msg}</p>
-            <button onclick="backToVoting()" style="margin-top:20px; padding:15px 30px; background:var(--main); color:black; border:none; border-radius:50px; font-weight:bold; cursor:pointer; box-shadow: 0 0 20px var(--main);">العودة للتصويت 🗳️</button>
-        `;
-        document.body.appendChild(lock);
-        document.body.style.overflow = 'hidden';
-    }
-
-    db.ref('games_status/arena').on('value', snap => {
-        const s = snap.val();
-        if (s && s.maintenance) showAdminLock("ARENA مغلقة", s.alertMessage || "نعمل على تحديثات جديدة");
-    });
 
     let rID, mID, rRef, myRole = "", canAction = true;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
@@ -366,8 +324,6 @@
             rRef.child(`votes/${myRole}`).onDisconnect().remove();
             
             document.getElementById('music-btn').classList.remove('hidden');
-            changeTrack("https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/%D8%AF%D9%8A%20%D8%AC%D9%8A%20%D8%B9%D9%85%D8%B1%20%D8%AD%D8%A7%D8%AD%D8%A7%20%D8%B1%D9%8A%D9%85%D9%83%D8%B3DJ%20Amr%207a7a%20Remix(MP3_160K).mp3", "موسيقى 1");
-
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('lobby').classList.remove('hidden');
             listenLobby();
@@ -382,7 +338,7 @@
 
     function resetToLobby() {
         if(myRole !== 'p1') return;
-        rRef.update({ gameState: 'readying', ready: null, votes: null, activeTab: 'war', war: {p1:50, p2:50}, bomb: null, sh: null, xo: null, ludo: null });
+        rRef.update({ gameState: 'readying', ready: null, votes: null, activeTab: 'war', war: {p1:50, p2:50, status:'playing'}, bomb: null, sh: null, xo: null, ludo: null });
     }
 
     function handleGameOver(msg) {
@@ -464,13 +420,13 @@
         });
 
         rRef.child('war').on('value', s => {
-            const d = s.val() || {p1:50, p2:50};
+            const d = s.val() || {p1:50, p2:50, status:'playing'};
             if(d.status === 'done') return;
             const myH = (myRole==='p1'?d.p1:d.p2);
             document.getElementById('my-war').style.height = myH + "%";
             document.getElementById('op-war').style.height = (100-myH) + "%";
             if(myH >= 100) { rRef.child('war/status').set('done'); handleGameOver(getRandom(wins)); }
-            else if (myH <= 0) { handleGameOver(getRandom(insults)); }
+            else if (myH <= 0) { rRef.child('war/status').set('done'); handleGameOver(getRandom(insults)); }
         });
 
         rRef.child('bomb').on('value', s => {
@@ -504,9 +460,11 @@
     function tapWar(e) {
         if(myRole==='viewer') return;
         rRef.child('war').transaction(d => {
-            if(!d) d = {p1:50, p2:50};
+            if(!d) d = {p1:50, p2:50, status:'playing'};
             if(d.status === 'done') return d;
-            if(myRole==='p1') { d.p1+=2; d.p2-=2; } else { d.p2+=2; d.p1-=2; }
+            if(myRole==='p1') { d.p1 += 2; d.p2 -= 2; } else { d.p2 += 2; d.p1 -= 2; }
+            if(d.p1 >= 100) { d.p1 = 100; d.p2 = 0; d.status = 'done'; }
+            if(d.p2 >= 100) { d.p2 = 100; d.p1 = 0; d.status = 'done'; }
             return d;
         });
     }
@@ -525,13 +483,35 @@
         const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
         let deck = [];
         ['H','S','D','C'].forEach(s => ranks.forEach(r => deck.push({r, s})));
-        deck.splice(Math.floor(Math.random()*52), 1); deck.push({r:'SHAIEB', s:'🤡'});
-        deck = deck.sort(()=>Math.random()-0.5);
-        const filter = (a) => {
-            let ct = {}; a.forEach(c => ct[c.r] = (ct[c.r]||0)+1);
-            return a.filter(c => c.r==='SHAIEB' || ct[c.r]%2!==0);
+        let shaiebIdx = Math.floor(Math.random() * 52);
+        deck.splice(shaiebIdx, 1); 
+        deck.push({r:'SHAIEB', s:'🤡'});
+        
+        deck = deck.sort(() => Math.random() - 0.5);
+
+        const removePairs = (arr) => {
+            let counts = {};
+            arr.forEach(c => { if(c.r !== 'SHAIEB') counts[c.r] = (counts[c.r] || 0) + 1; });
+            let result = [];
+            let paired = {};
+            arr.forEach(c => {
+                if(c.r === 'SHAIEB') { result.push(c); }
+                else if (counts[c.r] % 2 !== 0) {
+                    if(!paired[c.r]) { result.push(c); paired[c.r] = true; }
+                }
+            });
+            return result;
         };
-        rRef.child('sh').set({ p1C: filter(deck.slice(0,26)), p2C: filter(deck.slice(26)), turn:'p1' });
+
+        let p1Cards = deck.slice(0, 26);
+        let p2Cards = deck.slice(26);
+
+        rRef.child('sh').set({ 
+            p1C: removePairs(p1Cards), 
+            p2C: removePairs(p2Cards), 
+            turn: 'p1',
+            status: 'playing'
+        });
     }
 
     function renderSh(d) {
@@ -539,18 +519,21 @@
         const myC = (myRole==='p1'?d.p1C:d.p2C) || [], opC = (myRole==='p1'?d.p2C:d.p1C) || [];
         const isT = (d.turn === myRole);
         document.getElementById('sh-stat').innerText = isT ? "اسحب ورقة من الضحية" : "بيسحب منك.. يا رب مياخدش الشايب";
+        
         const opB = document.getElementById('op-area'); opB.innerHTML = "";
         opC.forEach((_,i) => { 
             let v = document.createElement('div'); v.className="card back"; 
             v.onclick=()=>pullSh(i); opB.appendChild(v); 
         });
+
         const myB = document.getElementById('my-area'); myB.innerHTML = "";
         myC.forEach(c => {
             let v = document.createElement('div'); v.className=`card ${'HD'.includes(c.s)?'red':''} ${c.r==='SHAIEB'?'shaieb':''}`;
             v.innerHTML = `<span>${c.r==='SHAIEB'?'🤡':c.r+syms[c.s]}</span>`;
             myB.appendChild(v);
         });
-        if(myC.length===0 && opC.length>0 && d.status !== 'done') {
+
+        if(myC.length === 0 && d.status === 'playing') {
             rRef.child('sh/status').set('done');
             handleGameOver("هربت بالسلامة! " + getRandom(wins));
         }
@@ -559,13 +542,20 @@
     function pullSh(idx) {
         if(!canAction) return; canAction = false;
         rRef.child('sh').once('value', s => {
-            let d = s.val(); if(!d || d.turn !== myRole || d.status==='done') { canAction=true; return; }
+            let d = s.val(); if(!d || d.turn !== myRole || d.status !== 'playing') { canAction=true; return; }
             let mk = (myRole==='p1'?'p1C':'p2C'), ok = (myRole==='p1'?'p2C':'p1C');
             let ma = [...(d[mk]||[])], oa = [...(d[ok]||[])];
+            
             let pld = oa.splice(idx,1)[0];
             let pi = ma.findIndex(c => c.r === pld.r && c.r !== 'SHAIEB');
-            if(pi!==-1) ma.splice(pi,1); else ma.push(pld);
-            rRef.child('sh').update({ [mk]:ma, [ok]:oa, turn:(myRole==='p1'?'p2':'p1') }).then(()=>setTimeout(()=>canAction=true,800));
+            
+            if(pi !== -1) ma.splice(pi,1); else ma.push(pld);
+            
+            rRef.child('sh').update({ 
+                [mk]: ma, 
+                [ok]: oa, 
+                turn: (myRole==='p1'?'p2':'p1') 
+            }).then(() => setTimeout(() => canAction=true, 600));
         });
     }
 
