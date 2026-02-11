@@ -3,119 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Arena Ultra | Panoramic Edition ⚡</title>
+    <title>Games1area | Ultra Arena ⚡</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        :root { --main: #00f2ff; --pink: #ff007a; --bg: #080808; --danger: #ff003c; --shaieb: #ffcc00; --card-back: #1e3799; }
+        :root { --main: #0f0; --shaieb: #ffcc00; --bg: #080808; --danger: #ff003c; --card-back: #1e3799; }
+        body { background: var(--bg); color: white; font-family: 'Cairo', sans-serif; margin: 0; text-align: center; overflow: hidden; touch-action: manipulation; }
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Cairo', sans-serif; background: #000; color: white; }
+        /* UI Basics */
+        .btn-main { background: var(--main); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); }
+        .tabs { display: flex; overflow-x: auto; background: #111; padding: 5px; gap: 5px; border-bottom: 2px solid #222; }
+        .tab { flex: 1; min-width: 80px; padding: 10px; font-size: 0.7rem; font-weight: bold; color: #555; background: #1a1a1a; border-radius: 10px; cursor: pointer; }
+        .tab.active { color: #000; background: var(--main); box-shadow: 0 0 15px var(--main); }
 
-        /* الخلفية البانورامية (صورتك من GitHub) */
-        .bg-panoramic {
-            position: fixed; top: 0; left: 0; width: 300%; height: 100%;
-            background: url('https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/bg.png') repeat-x;
-            background-size: cover; z-index: -1;
-            animation: moveBg 40s linear infinite alternate;
-            filter: brightness(0.5) contrast(1.2);
-        }
-        @keyframes moveBg { from { transform: translateX(0); } to { transform: translateX(-66%); } }
+        /* Speed War */
+        #war-container { width: 90%; height: 400px; margin: 10px auto; border: 4px solid #222; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
+        .war-half { transition: height 0.05s linear; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.5rem; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
 
-        /* نظام الشاشات */
-        .screen { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: absolute; transition: 0.5s; backdrop-filter: blur(10px); }
-        .hidden { display: none !important; }
+        /* Bomb */
+        #bomb-circle { width: 140px; height: 140px; border-radius: 50%; border: 8px solid var(--danger); margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; box-shadow: 0 0 30px var(--danger); }
+        .num-btn { background: #222; border: 1px solid #444; color: white; padding: 12px 20px; border-radius: 10px; font-size: 1.5rem; margin: 5px; }
 
-        /* التصويت واللوبي */
-        .glass-card { background: rgba(0,0,0,0.85); padding: 30px; border-radius: 25px; border: 2px solid var(--main); text-align: center; box-shadow: 0 0 30px rgba(0,242,255,0.2); width: 85%; max-width: 400px; }
-        .vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .vote-item { position: relative; border-radius: 15px; border: 2px solid #333; height: 110px; overflow: hidden; cursor: pointer; transition: 0.3s; }
-        .vote-item img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
-        .vote-item.selected { border-color: var(--main); transform: scale(1.05); box-shadow: 0 0 15px var(--main); }
-        .vote-item.selected img { opacity: 1; }
-        .vote-label { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); font-size: 0.8rem; font-weight: 900; padding: 5px 0; }
-
-        /* الألعاب (ستايل قديم محسن) */
-        #war-container { width: 90%; height: 400px; border: 4px solid #222; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
-        .war-half { transition: height 0.1s linear; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.5rem; }
-        .card { width: 50px; height: 75px; background: white; color: black; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin: 3px; font-size: 0.9rem; border: 1px solid #ccc; }
+        /* Cards (Shaieb) */
+        .card { width: 50px; height: 75px; background: white; color: black; border-radius: 8px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; margin: 3px; font-size: 0.9rem; border: 1px solid #ccc; }
         .card.back { background: var(--card-back); color: transparent; border: 2px solid #fff; }
         .card.red { color: #ff003c; }
         .card.shaieb { background: var(--danger); color: white; box-shadow: 0 0 10px red; }
-        .xo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 280px; margin: auto; }
-        .cell { height: 80px; background: rgba(255,255,255,0.1); border-radius: 15px; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; border: 2px solid #222; }
 
-        /* UI */
-        .btn-main { background: var(--main); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; cursor: pointer; }
-        .input-box { padding: 15px; border-radius: 15px; border: 1px solid #444; background: #000; color: #fff; text-align: center; width: 80%; margin-bottom: 20px; }
-        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px; border-radius: 20px; font-weight: 900; z-index: 10000; border: 4px solid var(--main); }
+        /* XO */
+        .xo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 280px; margin: auto; }
+        .cell { height: 80px; background: #151515; border-radius: 15px; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; border: 2px solid #222; }
+
+        .hidden { display: none; }
+        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px 40px; border-radius: 25px; font-weight: 900; font-size: 1.4rem; z-index: 10000; text-align: center; border: 5px solid var(--main); line-height: 1.4; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
 
-<div class="bg-panoramic"></div>
-
-<div id="screen-join" class="screen">
-    <div class="glass-card">
-        <h1 style="color:var(--main); margin:0;">ARENA ⚡</h1>
-        <p style="color:#aaa;">ادخل الكود لتحدي الخصم</p>
-        <input type="text" id="room-id" class="input-box" placeholder="كود الغرفة">
-        <button class="btn-main" onclick="joinRoom()">دخول الاستراحة 🔥</button>
-    </div>
+<div id="setup" style="padding: 100px 20px;">
+    <h1 style="color:var(--main); font-size: 3.5rem; margin:0; letter-spacing: -2px;">ARENA ⚡</h1>
+    <p style="color:#555;">أسرع واحد بيكسب، والأخيب ببيتمسخر!</p>
+    <input type="text" id="room" placeholder="كود الغرفة" style="padding:15px; border-radius:15px; border:1px solid #333; background:#111; color:white; width:200px; text-align:center;"><br><br>
+    <button class="btn-main" onclick="joinRoom()">دخول الساحة</button>
 </div>
 
-<div id="screen-lobby" class="screen hidden">
-    <div class="glass-card">
-        <h2 style="animation: pulse 1s infinite alternate;">في انتظار الخصم...</h2>
-        <div style="margin: 20px 0; color: var(--main); font-weight: 900;">ID: <span id="display-id"></span></div>
-        <p style="font-size: 0.8rem;">أول ما اللاعب التاني يدخل هنبدأ التصويت فوراً</p>
+<div id="game-ui" class="hidden">
+    <div class="tabs">
+        <div id="t-war" class="tab active" onclick="switchUI('war')">السرعة ⚡</div>
+        <div id="t-sh" class="tab" onclick="switchUI('sh')">الشايب 🤡</div>
+        <div id="t-bomb" class="tab" onclick="switchUI('bomb')">القنبلة 💣</div>
+        <div id="t-xo" class="tab" onclick="switchUI('xo')">XO ⭕</div>
     </div>
-</div>
 
-<div id="screen-vote" class="screen hidden">
-    <h2 style="text-shadow: 0 0 10px var(--main);">اختر ماب اللعب 🗺️</h2>
-    <div class="vote-grid">
-        <div class="vote-item" onclick="submitVote('war')">
-            <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200">
-            <div class="vote-label">السرعة ⚡</div>
-        </div>
-        <div class="vote-item" onclick="submitVote('bomb')">
-            <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=200">
-            <div class="vote-label">القنبلة 💣</div>
-        </div>
-        <div class="vote-item" onclick="submitVote('sh')">
-            <img src="https://images.unsplash.com/photo-1596448332613-241073d44e4a?w=200">
-            <div class="vote-label">الشايب 🤡</div>
-        </div>
-        <div class="vote-item" onclick="submitVote('xo')">
-            <img src="https://images.unsplash.com/photo-1611996575749-79a3a250f948?w=200">
-            <div class="vote-label">XO ⭕</div>
-        </div>
-    </div>
-    <p id="vote-status" style="margin-top:20px; color:var(--pink);">في انتظار تصويت الخصم...</p>
-</div>
-
-<div id="screen-game" class="screen hidden" style="backdrop-filter: none; background: rgba(0,0,0,0.7);">
-    <div id="war-ui" class="hidden" style="width:100%">
-        <div id="war-container" onclick="tapWar()">
+    <div id="war-ui">
+        <div id="war-container" onclick="tapWar(event)">
             <div id="op-war" class="war-half" style="background:var(--danger); height:50%;">الضحية</div>
             <div id="my-war" class="war-half" style="background:var(--main); height:50%;">الوحش</div>
         </div>
     </div>
-    <div id="bomb-ui" class="hidden">
-        <h2 id="bomb-msg">دور مين؟</h2>
-        <div id="bomb-circle" style="width:140px; height:140px; border:8px solid var(--danger); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:3rem; font-weight:900; margin:20px auto;">0</div>
-        <button class="btn-main" style="margin:5px;" onclick="addBomb(1)">+1</button>
-        <button class="btn-main" style="margin:5px;" onclick="addBomb(2)">+2</button>
-    </div>
+
     <div id="sh-ui" class="hidden">
         <h3 id="sh-stat" style="color:var(--shaieb)">...</h3>
-        <div id="op-area"></div><div id="my-area" style="margin-top:20px;"></div>
+        <div id="op-area"></div>
+        <div id="my-area" style="margin-top:20px;"></div>
     </div>
+
+    <div id="bomb-ui" class="hidden">
+        <h2 id="bomb-msg">دور مين؟</h2>
+        <div id="bomb-circle">0</div>
+        <div id="bomb-btns">
+            <button class="num-btn" onclick="addBomb(1)">+1</button>
+            <button class="num-btn" onclick="addBomb(2)">+2</button>
+            <button class="num-btn" onclick="addBomb(3)">+3</button>
+        </div>
+    </div>
+
     <div id="xo-ui" class="hidden">
         <h3 id="xo-stat" style="color:var(--main)">...</h3>
         <div class="xo-grid" id="xo-board"></div>
     </div>
+
+    <button onclick="clearRoom()" style="background:none; border:none; color:#444; margin-top:30px; text-decoration:underline; font-weight:bold;">سوفت وير شامل للغرفة 🔄</button>
 </div>
 
 <script>
@@ -123,162 +92,209 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let rID, mID, rRef, myRole, canAction = true;
+    let rID, mID, rRef, myRole = "", canAction = true;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
 
+    // --- نظام الاستفزاز المصري ---
+    const insults = [
+        "يا نوب اعتزل أحسن! 😂",
+        "سرعة سلحفاة مشلولة 🐢",
+        "العب بصباعك التاني يمكن تفلح 🤡",
+        "شكلك وحش أوي قدام الخصم 💀",
+        "أنا لو منك أرمي الموبايل 🚮",
+        "جت فيك يا خايب! 💣",
+        "الخصم داس عليك حرفياً 🦶",
+        "إيه الضحك ده؟ 😂"
+    ];
+    const wins = [
+        "جلدته جلد! 🔥",
+        "مستواك عالمي يا وحش 🦁",
+        "الخصم بيعيط في الزاوية 😭",
+        "إيه السيطرة دي يا ملك! 👑",
+        "سهلة أوي.. هات اللي بعده 😎"
+    ];
+
+    function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
     function joinRoom() {
-        rID = document.getElementById('room-id').value.trim();
-        if(!rID) return;
+        rID = document.getElementById('room').value.trim();
+        if(!rID) return alert("دخل كود الغرفة!");
         mID = "U" + Math.floor(Math.random()*9999);
-        rRef = db.ref(`arena_v7/${rID}`);
-        document.getElementById('display-id').innerText = rID;
+        rRef = db.ref(`final_arena_v4/${rID}`);
 
         rRef.child('slots').transaction(s => {
             if(!s) return { p1: mID };
             if(!s.p2 && s.p1 !== mID) return { p1: s.p1, p2: mID };
             return s;
         }, (err, comm, snap) => {
-            myRole = (snap.val().p1 === mID) ? "p1" : "p2";
-            showScreen('screen-lobby');
-            rRef.child(`slots/${myRole}`).onDisconnect().remove();
+            const s = snap.val();
+            myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
             
-            // مراقبة دخول الخصم
-            rRef.child('slots').on('value', ss => {
-                if(ss.val()?.p1 && ss.val()?.p2) setTimeout(() => showScreen('screen-vote'), 2000);
-            });
+            // --- السوفت وير التلقائي عند الخروج ---
+            const mySlotRef = rRef.child(`slots/${myRole}`);
+            mySlotRef.onDisconnect().remove();
+            rRef.child('slots').on('value', ss => { if(!ss.exists()) rRef.onDisconnect().remove(); });
 
-            // مراقبة نتيجة التصويت
-            rRef.child('finalGame').on('value', ss => {
-                if(ss.val()) startGame(ss.val());
-            });
-
-            startSync();
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            initXO();
+            startListeners();
         });
     }
 
-    function submitVote(game) {
-        rRef.child(`votes/${myRole}`).set(game);
-        document.querySelectorAll('.vote-item').forEach(i => i.classList.remove('selected'));
-        event.currentTarget.classList.add('selected');
-        
-        rRef.child('votes').once('value', ss => {
-            const v = ss.val();
-            if(v && v.p1 && v.p2) {
-                // لو الاتنين صوتوا، p1 بيحدد النتيجة
-                if(myRole === 'p1') rRef.child('finalGame').set(v.p1); 
-            }
+    function switchUI(t) { rRef.update({ activeTab: t }); }
+
+    function startListeners() {
+        rRef.child('activeTab').on('value', s => {
+            const t = s.val() || 'war';
+            ['war','sh','bomb','xo'].forEach(id => {
+                document.getElementById(id+'-ui').classList.add('hidden');
+                document.getElementById('t-'+id).classList.remove('active');
+            });
+            document.getElementById(t+'-ui').classList.remove('hidden');
+            document.getElementById('t-'+t).classList.add('active');
         });
-    }
 
-    function startGame(game) {
-        showScreen('screen-game');
-        document.getElementById(game + '-ui').classList.remove('hidden');
-        if(game === 'xo') initXO();
-    }
-
-    function startSync() {
-        // لوجيك حرب السرعة
+        // Speed War
         rRef.child('war').on('value', s => {
             const d = s.val() || {p1:50, p2:50};
-            document.getElementById('my-war').style.height = (myRole==='p1'?d.p1:d.p2) + "%";
-            document.getElementById('op-war').style.height = (myRole==='p1'?d.p2:d.p1) + "%";
-            if(d.p1 >= 100 || d.p2 >= 100) { showBigMsg("انتهت المعركة!"); rRef.child('war').set({p1:50, p2:50}); }
+            const myH = (myRole==='p1'?d.p1:d.p2);
+            document.getElementById('my-war').style.height = myH + "%";
+            document.getElementById('op-war').style.height = (100-myH) + "%";
+            if(myH >= 100) { 
+                showBigMsg(getRandom(wins)); 
+                if(myRole==='p1') rRef.child('war').set({p1:50, p2:50}); 
+            } else if (myH <= 0) {
+                showBigMsg(getRandom(insults));
+            }
         });
 
-        // لوجيك القنبلة
+        // Bomb
         rRef.child('bomb').on('value', s => {
             const d = s.val() || {val:0, turn:'p1'};
             document.getElementById('bomb-circle').innerText = d.val;
-            document.getElementById('bomb-msg').innerText = d.turn===myRole ? "دورك.. حاسب! 💣" : "استنى الانفجار 😂";
-            if(d.status === 'exploded') showBigMsg("بوم! راحت عليك");
+            document.getElementById('bomb-msg').innerText = d.turn===myRole ? "دورك.. لا تفجرها! 💣" : "استنى لما ينفجر 😂";
+            if(d.status === 'exploded') {
+                showBigMsg(d.turn===myRole ? getRandom(insults) : getRandom(wins));
+                if(myRole==='p1') setTimeout(()=> rRef.child('bomb').remove(), 3000);
+            }
         });
 
-        // لوجيك الشايب
+        // Shaieb
         rRef.child('sh').on('value', s => {
             const d = s.val();
             if(!d && myRole==='p1') setupSh();
             else if(d) renderSh(d);
         });
 
-        // لوجيك XO
+        // XO
         rRef.child('xo').on('value', s => {
             const d = s.val() || { b: Array(9).fill(""), turn: "p1" };
             const cells = document.querySelectorAll('.cell');
-            d.b.forEach((v, i) => { cells[i].innerText = v; cells[i].style.color = (v==='X'?'#00f2ff':'#ff007a'); });
-            if(d.win) showBigMsg("فوز مستحق!");
+            d.b.forEach((v, i) => { cells[i].innerText = v; cells[i].style.color = (v==='X'?'#0f0':'#f00'); });
+            if(d.win) {
+                showBigMsg(d.winRole===myRole ? getRandom(wins) : getRandom(insults));
+                if(myRole==='p1') setTimeout(()=> rRef.child('xo').remove(), 3000);
+            }
         });
     }
 
-    // الأكشنز (مستوردة من كودك القديم)
-    function tapWar() {
+    // --- Actions ---
+    function tapWar(e) {
+        if(myRole==='viewer') return;
         rRef.child('war').transaction(d => {
             if(!d) d = {p1:50, p2:50};
-            myRole==='p1' ? (d.p1+=2, d.p2-=2) : (d.p2+=2, d.p1-=2);
+            if(myRole==='p1') { d.p1+=2; d.p2-=2; } else { d.p2+=2; d.p1-=2; }
             return d;
         });
     }
 
     function addBomb(n) {
         rRef.child('bomb').once('value', s => {
-            const d = s.val() || {val:0, limit: 35, turn:'p1'};
-            if(d.turn !== myRole) return;
+            const d = s.val() || {val:0, limit: Math.floor(Math.random()*20)+40, turn:'p1'};
+            if(d.turn !== myRole || d.status === 'exploded') return;
             let nv = d.val + n;
-            rRef.child('bomb').update({ val:nv, turn:(myRole==='p1'?'p2':'p1'), status: nv>=d.limit?'exploded':'playing' });
+            let exp = nv >= d.limit;
+            rRef.child('bomb').update({ val:nv, turn:(myRole==='p1'?'p2':'p1'), status:exp?'exploded':'playing', limit:d.limit });
         });
     }
 
-    // --- (باقي دوال الشايب و XO من كودك كما هي) ---
+    // --- Shaieb (توزيع عادل) ---
     function setupSh() {
         const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-        let deck = []; ranks.forEach(r => ['H','S','D','C'].forEach(s => deck.push({r,s})));
-        deck.splice(0,1); deck.push({r:'SHAIEB', s:'🤡'}); deck.sort(()=>Math.random()-0.5);
-        rRef.child('sh').set({ p1C: deck.slice(0,26), p2C: deck.slice(26), turn:'p1' });
+        let deck = [];
+        ['H','S','D','C'].forEach(s => ranks.forEach(r => deck.push({r, s})));
+        deck.splice(Math.floor(Math.random()*52), 1);
+        deck.push({r:'SHAIEB', s:'🤡'});
+        deck = deck.sort(()=>Math.random()-0.5);
+        const filter = (a) => {
+            let ct = {}; a.forEach(c => ct[c.r] = (ct[c.r]||0)+1);
+            return a.filter(c => c.r==='SHAIEB' || ct[c.r]%2!==0);
+        };
+        rRef.child('sh').set({ p1C: filter(deck.slice(0,26)), p2C: filter(deck.slice(26)), turn:'p1' });
     }
 
     function renderSh(d) {
         const myC = (myRole==='p1'?d.p1C:d.p2C) || [], opC = (myRole==='p1'?d.p2C:d.p1C) || [];
+        const isT = (d.turn === myRole);
+        document.getElementById('sh-stat').innerText = isT ? "اسحب ورقة من الضحية" : "بيسحب منك.. يا رب مياخدش الشايب";
         const opB = document.getElementById('op-area'); opB.innerHTML = "";
-        opC.forEach((_,i) => { let v = document.createElement('div'); v.className="card back"; v.onclick=()=>pullSh(i); opB.appendChild(v); });
+        opC.forEach((_,i) => { 
+            let v = document.createElement('div'); v.className="card back"; 
+            v.onclick=()=>pullSh(i); opB.appendChild(v); 
+        });
         const myB = document.getElementById('my-area'); myB.innerHTML = "";
-        myC.forEach(c => { let v = document.createElement('div'); v.className="card"; v.innerText = c.r==='SHAIEB'?'🤡':c.r; myB.appendChild(v); });
+        myC.forEach(c => {
+            let v = document.createElement('div'); v.className=`card ${'HD'.includes(c.s)?'red':''} ${c.r==='SHAIEB'?'shaieb':''}`;
+            v.innerHTML = `<span>${c.r==='SHAIEB'?'🤡':c.r+syms[c.s]}</span>`;
+            myB.appendChild(v);
+        });
+        if(myC.length===0 && opC.length>0 && d.status !== 'done') {
+            showBigMsg("هربت بالسلامة! " + getRandom(wins));
+            rRef.child('sh/status').set('done');
+        }
     }
 
     function pullSh(idx) {
-        if(myRole==='viewer') return;
+        if(!canAction) return; canAction = false;
         rRef.child('sh').once('value', s => {
-            let d = s.val(); if(d.turn !== myRole) return;
-            let mk = myRole+'C', ok = (myRole==='p1'?'p2':'p1')+'C';
-            let ma = d[mk], oa = d[ok];
-            ma.push(oa.splice(idx,1)[0]);
-            rRef.child('sh').update({ [mk]:ma, [ok]:oa, turn:(myRole==='p1'?'p2':'p1') });
+            let d = s.val(); if(!d || d.turn !== myRole) { canAction=true; return; }
+            let mk = (myRole==='p1'?'p1C':'p2C'), ok = (myRole==='p1'?'p2C':'p1C');
+            let ma = [...(d[mk]||[])], oa = [...(d[ok]||[])];
+            let pld = oa.splice(idx,1)[0];
+            let pi = ma.findIndex(c => c.r === pld.r && c.r !== 'SHAIEB');
+            if(pi!==-1) ma.splice(pi,1); else ma.push(pld);
+            rRef.child('sh').update({ [mk]:ma, [ok]:oa, turn:(myRole==='p1'?'p2':'p1') }).then(()=>setTimeout(()=>canAction=true,800));
         });
     }
 
+    // --- XO ---
     function initXO() {
         const b = document.getElementById('xo-board'); b.innerHTML = "";
         for(let i=0; i<9; i++) { let v = document.createElement('div'); v.className="cell"; v.onclick=()=>tapXO(i); b.appendChild(v); }
     }
-
     function tapXO(i) {
         rRef.child('xo').once('value', s => {
             let d = s.val() || { b: Array(9).fill(""), turn: "p1" };
             if(myRole !== d.turn || d.b[i] || d.win) return;
             d.b[i] = (myRole === 'p1') ? 'X' : 'O';
             const wns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-            wns.forEach(w => { if(d.b[w[0]] && d.b[w[0]]===d.b[w[1]] && d.b[w[0]]===d.b[w[2]]) d.win=d.b[w[0]]; });
-            d.turn = (myRole==='p1'?'p2':'p1');
+            wns.forEach(w => { if(d.b[w[0]] && d.b[w[0]]===d.b[w[1]] && d.b[w[0]]===d.b[w[2]]) { d.win=d.b[w[0]]; d.winRole=myRole; } });
+            if(!d.win) d.turn = (myRole==='p1'?'p2':'p1');
             rRef.child('xo').update(d);
         });
-    }
-
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
     }
 
     function showBigMsg(txt) {
         const t = document.createElement('div'); t.className='toast'; t.innerText=txt;
         document.body.appendChild(t); setTimeout(()=>t.remove(), 2500);
+    }
+
+    function clearRoom() {
+        if(confirm("تصفير شامل؟ الغرفة هترجع كأنها جديدة!")) {
+            rRef.child('sh').remove(); rRef.child('bomb').remove(); rRef.child('xo').remove(); rRef.child('war').remove();
+            showBigMsg("تم السوفت وير بنجاح 🔄");
+        }
     }
 </script>
 </body>
