@@ -9,8 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { background: #080808; color: white; font-family: 'Cairo', sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .admin-card { background: #111; border: 2px solid #0f0; padding: 30px; border-radius: 25px; max-width: 500px; margin: 40px auto; box-shadow: 0 0 40px rgba(0,255,0,0.15); }
+        .admin-card { background: #111; border: 2px solid #0f0; padding: 30px; border-radius: 25px; max-width: 500px; margin: 20px auto; box-shadow: 0 0 40px rgba(0,255,0,0.15); }
         h1 { color: #0f0; font-weight: 900; margin-bottom: 5px; }
+        h2 { color: #ffcc00; font-size: 1.2rem; margin-top: 0; }
         p { color: #888; font-size: 0.9rem; margin-bottom: 25px; }
         
         label { display: block; text-align: right; margin: 10px 5px 5px; font-weight: bold; color: #ccc; }
@@ -21,18 +22,17 @@
         .btn { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; font-size: 1rem; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
         .btn-lock { background: #ff003c; color: white; }
-        .btn-lock:hover { background: #ff2e5f; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255, 0, 60, 0.4); }
-        
         .btn-unlock { background: #0f0; color: black; }
-        .btn-unlock:hover { background: #33ff33; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4); }
-
-        /* ستايل زر السوفت وير */
-        .danger-zone { margin-top: 30px; padding-top: 20px; border-top: 2px dashed #222; }
         .btn-reset { background: #ffcc00; color: black; width: 100%; }
-        .btn-reset:hover { background: #ffe066; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3); }
         
-        .btn:active { transform: scale(0.95); }
-        
+        /* ستايل رادار اللاعبين */
+        .radar-card { background: #111; border: 2px solid #ffcc00; padding: 20px; border-radius: 25px; max-width: 600px; margin: 20px auto; }
+        .player-row { background: #000; padding: 15px; margin-bottom: 10px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border-right: 5px solid #0f0; text-align: right; }
+        .player-info b { color: #0f0; font-size: 1rem; }
+        .player-info small { color: #888; display: block; margin-top: 3px; }
+        .btn-map { background: #00acee; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: bold; margin-left: 10px; }
+        .btn-ban-action { background: #ff003c; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+
         .footer { margin-top: 20px; font-size: 0.7rem; color: #444; }
     </style>
 </head>
@@ -41,7 +41,6 @@
 <div class="admin-card">
     <h1>التحكم في الألعاب 🎮</h1>
     <p>تحكم في إتاحة الألعاب والرسائل المخصصة</p>
-    <hr style="border: 0.5px solid #222; margin-bottom: 25px;">
 
     <label>اختر اللعبة المستهدفة:</label>
     <select id="game-selector">
@@ -50,27 +49,25 @@
         <option value="sh">الشايب 🤡</option>
         <option value="bomb">القنبلة 💣</option>
         <option value="xo">XO ⭕</option>
-        <option value="ludo">Ludo 🎲</option>
     </select>
 
-    <label>رسالة التنبيه (تظهر عند الضغط):</label>
-    <input type="text" id="admin-msg" placeholder="مثال: اللعبة تحت التحديث، انتظر قليلاً...">
+    <label>رسالة التنبيه:</label>
+    <input type="text" id="admin-msg" placeholder="مثال: اللعبة تحت التحديث...">
 
     <div class="btn-group">
-        <button class="btn btn-lock" onclick="controlGame(true)">
-            <span>🔒</span> قفل اللعبة
-        </button>
-        <button class="btn btn-unlock" onclick="controlGame(false)">
-            <span>🔓</span> فتح اللعبة
-        </button>
+        <button class="btn btn-lock" onclick="controlGame(true)">🔒 قفل</button>
+        <button class="btn btn-unlock" onclick="controlGame(false)">🔓 فتح</button>
     </div>
 
-    <div class="danger-zone">
-        <p style="color:#ff003c; font-weight:bold; margin-bottom:10px;">⚠️ منطقة العمليات الحساسة</p>
-        <button class="btn btn-reset" onclick="resetAllRooms()">
-            <span>🔄</span> سوفت وير شامل لكل الغرف
-        </button>
-        <p style="color:#555; font-size:0.7rem; margin-top:10px;">هذا الزر سيقوم بمسح كافة بيانات الغرف واللاعبين حالياً.</p>
+    <div style="margin-top: 20px;">
+        <button class="btn btn-reset" onclick="resetAllRooms()">🔄 سوفت وير لكل الغرف</button>
+    </div>
+</div>
+
+<div class="radar-card">
+    <h2>رادار الموقع الدقيق (GPS) 📡</h2>
+    <div id="players-list">
+        <p style="color: #444;">جاري البحث عن لاعبين نشطين...</p>
     </div>
 </div>
 
@@ -83,44 +80,71 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // --- مراقبة رادار اللاعبين ---
+    db.ref('admin_security/active_players').on('value', (snapshot) => {
+        const list = document.getElementById('players-list');
+        list.innerHTML = "";
+        const players = snapshot.val();
+
+        if (!players) {
+            list.innerHTML = "<p style='color: #444;'>لا يوجد لاعبين متصلين حالياً.</p>";
+            return;
+        }
+
+        for (let id in players) {
+            const p = players[id];
+            const row = document.createElement('div');
+            row.className = "player-row";
+
+            const mapBtn = p.map 
+                ? `<a href="${p.map}" target="_blank" class="btn-map">📍 الخريطة</a>` 
+                : `<span style="color:#444; font-size:0.7rem;">الموقع محجوب</span>`;
+
+            row.innerHTML = `
+                <div class="player-info">
+                    <b>ID: ${id}</b>
+                    <small>IP: ${p.ip}</small>
+                    <small>الغرفة: ${p.room || 'غير معروف'}</small>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    ${mapBtn}
+                    <button class="btn-ban-action" onclick="banIP('${p.ip}')">حظر 🚫</button>
+                </div>
+            `;
+            list.appendChild(row);
+        }
+    });
+
+    // --- وظيفة الحظر لدقيقة ---
+    function banIP(ip) {
+        if (confirm(`هل تريد حظر الـ IP: ${ip} لمدة دقيقة؟`)) {
+            const ipKey = ip.replace(/\./g, '_');
+            const banUntil = Date.now() + 60000;
+            db.ref('admin_security/blacklist/' + ipKey).set({
+                bannedUntil: banUntil
+            }).then(() => {
+                alert("تم الحظر بنجاح.");
+            });
+        }
+    }
+
+    // --- وظائف التحكم الأصلية ---
     function controlGame(status) {
         const selectedGame = document.getElementById('game-selector').value;
-        const gameNameText = document.getElementById('game-selector').options[document.getElementById('game-selector').selectedIndex].text;
-        const msg = document.getElementById('admin-msg').value;
-
-        const finalMsg = msg.trim() || "هذه اللعبة مغلقة حالياً للصيانة.";
+        const msg = document.getElementById('admin-msg').value.trim() || "هذه اللعبة مغلقة حالياً للصيانة.";
 
         db.ref('games_status/' + selectedGame).set({
             maintenance: status,
-            alertMessage: finalMsg
+            alertMessage: msg
         }).then(() => {
-            if(status) {
-                alert(`✅ تم قفل ${gameNameText} بنجاح.\nالرسالة: ${finalMsg}`);
-            } else {
-                alert(`✅ تم فتح ${gameNameText} بنجاح.`);
-            }
-            document.getElementById('admin-msg').value = "";
-        }).catch((error) => {
-            alert("❌ حدث خطأ في الاتصال: " + error.message);
+            alert(status ? "✅ تم القفل" : "✅ تم الفتح");
         });
     }
 
-    // دالة السوفت وير الشامل لكل الغرف
     function resetAllRooms() {
-        const pass = "حذف";
-        const userInput = prompt("⚠️ تحذير: سيتم حذف جميع الغرف النشطة الآن!\nاكتب كلمة (حذف) للتأكيد:");
-
-        if (userInput === pass) {
-            // المسار الذي يحتوي على كافة الغرف
+        if (prompt("اكتب (حذف) للتأكيد:") === "حذف") {
             db.ref('final_arena_v4').remove()
-                .then(() => {
-                    alert("✅ تم بنجاح تصفير كافة الغرف وإعادتها للحالة الأصلية.");
-                })
-                .catch((error) => {
-                    alert("❌ فشل التصفير: " + error.message);
-                });
-        } else if (userInput !== null) {
-            alert("⚠️ الكلمة غير صحيحة، لم يتم حذف أي شيء.");
+                .then(() => alert("✅ تم تصفير كافة الغرف."));
         }
     }
 </script>
