@@ -138,8 +138,36 @@
         
         .msg.me { background: var(--main); color: #000; align-self: flex-start; border-bottom-left-radius: 2px; font-weight: bold; text-align: right; }
         .msg.him { background: #222; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; border: 1px solid #444; text-align: right; }
-        #chat-input-area { display: flex; padding: 15px; border-top: 1px solid #333; gap: 8px; }
-        #chat-input { flex: 1; background: #151515; border: 1.5px solid #333; color: white; border-radius: 12px; padding: 10px; font-family: 'Cairo'; outline: none; }
+        
+        /* التعديل المصلح هنا لمنطقة الشات */
+        #chat-input-area { 
+            display: flex; 
+            padding: 15px; 
+            border-top: 1px solid #333; 
+            gap: 8px; 
+            align-items: center;
+            z-index: 10;
+        }
+        #chat-input { 
+            flex: 1; 
+            min-width: 0; /* يمنع الحقل من تخطي المساحة */
+            background: #151515; 
+            border: 1.5px solid #333; 
+            color: white; 
+            border-radius: 12px; 
+            padding: 10px; 
+            font-family: 'Cairo'; 
+            outline: none; 
+        }
+        #chat-send-btn {
+            flex-shrink: 0; /* يضمن إن الزرار ميتضغطش */
+            background: var(--main); 
+            border: none; 
+            border-radius: 10px; 
+            padding: 10px 15px; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
         
         .side-toggle { position: fixed; left: 20px; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1001; cursor: pointer; transition: 0.3s; font-size: 1.8rem; }
         #chat-toggle { bottom: 20px; background: var(--main); box-shadow: 0 0 20px rgba(0,255,0,0.4); }
@@ -234,7 +262,7 @@
     <div id="chat-messages"></div>
     <div id="chat-input-area">
         <input type="text" id="chat-input" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendChat()">
-        <button onclick="sendChat()" style="background:var(--main); border:none; border-radius:10px; padding:10px; cursor:pointer; font-weight:bold;">🚀</button>
+        <button id="chat-send-btn" onclick="sendChat()">🚀</button>
     </div>
 </div>
 
@@ -515,7 +543,7 @@
             document.getElementById('my-gold-display').innerText = data.gold || 0;
             document.getElementById('my-points-display').innerText = data.points || 0;
             
-            updateQuestUI(data); // تحديث المهام مع كل تغيير في الداتا
+            updateQuestUI(data); 
 
             const skills = data.skills || {};
             ['spy', 'skip', 'freeze', 'erase'].forEach(id => {
