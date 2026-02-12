@@ -319,19 +319,29 @@
     function joinRoom() {
         rID = document.getElementById('room').value.trim();
         if(!rID) return alert("دخل كود الغرفة!");
-        mID = "U" + Math.floor(Math.random()*9999);
+        
+        mID = localStorage.getItem('arena_user_id');
+        if(!mID) {
+            mID = "U" + Math.floor(Math.random()*9999);
+            localStorage.setItem('arena_user_id', mID);
+        }
+        
         rRef = db.ref(`final_arena_v4/${rID}`);
 
         rRef.child('slots').transaction(s => {
             if(!s) return { p1: mID };
-            if(!s.p2 && s.p1 !== mID) return { p1: s.p1, p2: mID };
+            if(s.p1 === mID || s.p2 === mID) return s;
+            if(!s.p2) return { p1: s.p1, p2: mID };
             return s;
         }, (err, comm, snap) => {
-            const s = snap.val();
+            const s = snap.val() || {};
             myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
-            rRef.child(`slots/${myRole}`).onDisconnect().remove();
-            rRef.child(`ready/${myRole}`).onDisconnect().remove();
-            rRef.child(`votes/${myRole}`).onDisconnect().remove();
+            
+            if(myRole !== "viewer") {
+                rRef.child(`slots/${myRole}`).onDisconnect().remove();
+                rRef.child(`ready/${myRole}`).onDisconnect().remove();
+                rRef.child(`votes/${myRole}`).onDisconnect().remove();
+            }
             
             document.getElementById('music-btn').classList.remove('hidden');
             document.getElementById('setup').classList.add('hidden');
