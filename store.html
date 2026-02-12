@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> ARENA STORE ⚡ - مهارات الوحوش</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #ffd700; --bg: #0a0a0a; --card: #151515; --main: #0f0; }
+        
+        body {
+            background: var(--bg); color: white; font-family: 'Cairo', sans-serif;
+            margin: 0; padding: 20px; text-align: center;
+        }
+
+        header {
+            background: linear-gradient(180deg, #1a1a1a, var(--bg));
+            padding: 30px 10px; border-bottom: 2px solid var(--gold);
+            margin-bottom: 30px; border-radius: 0 0 30px 30px;
+        }
+
+        .gold-status {
+            font-size: 1.5rem; font-weight: 900; color: var(--gold);
+            background: rgba(255, 215, 0, 0.1); display: inline-block;
+            padding: 10px 25px; border-radius: 50px; border: 1px solid var(--gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        }
+
+        /* تنسيق الشبكة: 4 مهارات في كل سطر */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .skill-item {
+            background: var(--card); border: 2px solid #222;
+            padding: 15px 10px; border-radius: 20px;
+            transition: 0.3s; position: relative;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .skill-item:hover { border-color: var(--gold); transform: translateY(-5px); }
+
+        .skill-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+        .skill-name { font-weight: 900; color: var(--gold); font-size: 1rem; margin-bottom: 5px; }
+
+        .skill-desc {
+            font-size: 0.75rem; color: #bbb; line-height: 1.4;
+            margin-bottom: 15px; height: 60px; display: flex; align-items: center;
+        }
+
+        .skill-price {
+            background: var(--gold); color: black; font-weight: 900;
+            padding: 8px 15px; border-radius: 12px; cursor: pointer;
+            border: none; width: 100%; transition: 0.2s;
+        }
+
+        .skill-price:active { transform: scale(0.9); }
+
+        .inventory-badge {
+            position: absolute; top: 10px; right: 10px;
+            background: var(--main); color: black;
+            font-size: 0.7rem; font-weight: 900;
+            padding: 2px 8px; border-radius: 8px;
+        }
+
+        /* تحسين للموبايل: لو الشاشة صغيرة يظهر 2 في السطر */
+        @media (max-width: 600px) {
+            .store-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: white; color: black; padding: 12px 25px;
+            border-radius: 50px; font-weight: 900; display: none; z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 style="margin:0; font-size: 2rem;">متجر الأسلحة والمهارات ⚔️</h1>
+        <p style="color:#777;">جهز نفسك للملحمة القادمة</p>
+        <div class="gold-status">جولد: <span id="gold-val">0</span> 💰</div>
+    </header>
+
+    <div class="store-grid">
+        <div class="skill-item">
+            <div class="inventory-badge" id="inv-spy">0</div>
+            <div class="skill-icon">👁️</div>
+            <div class="skill-name">كشف المستور</div>
+            <div class="skill-desc">خاص بلعبة الشايب: تمنحك القدرة على رؤية ورقة عشوائية من يد الخصم لمدة ثانيتين كاملتين.</div>
+            <button class="skill-price" onclick="buy('spy', 150)">150 جولد</button>
+        </div>
+
+        <div class="skill-item">
+            <div class="inventory-badge" id="inv-skip">0</div>
+            <div class="skill-icon">🏃‍♂️</div>
+            <div class="skill-name">هروب سريع</div>
+            <div class="skill-desc">خاص بلعبة القنبلة: تمكنك من تخطي دورك تماماً دون إضافة أي رقم، مما يضع الخصم في مأزق.</div>
+            <button class="skill-price" onclick="buy('skip', 120)">120 جولد</button>
+        </div>
+
+        <div class="skill-item">
+            <div class="inventory-badge" id="inv-freeze">0</div>
+            <div class="skill-icon">❄️</div>
+            <div class="skill-name">تجميد الأعصاب</div>
+            <div class="skill-desc">خاص بلعبة السرعة (War): تمنع الخصم من الضغط على شاشته لمدة 3 ثوانٍ، مما يمنحك أفضلية ساحقة.</div>
+            <button class="skill-price" onclick="buy('freeze', 180)">180 جولد</button>
+        </div>
+
+        <div class="skill-item">
+            <div class="inventory-badge" id="inv-erase">0</div>
+            <div class="skill-icon">🧽</div>
+            <div class="skill-name">الاستيكة السحرية</div>
+            <div class="skill-desc">خاص بلعبة XO: تتيح لك مسح آخر علامة (X أو O) وضعها الخصم في الجدول لتبديل خطته.</div>
+            <button class="skill-price" onclick="buy('erase', 130)">130 جولد</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // إعدادات الفايربيس (نفس إعدادات اللعبة)
+        const firebaseConfig = { databaseURL: "https://zeweil-chat-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // الحصول على معرف اللاعب من التخزين المحلي
+        const mID = localStorage.getItem('arena_user_id');
+        
+        if (!mID) {
+            alert("خطأ: لم يتم العثور على حساب لاعب. من فضلك ادخل اللعبة أولاً.");
+            window.location.href = "index.html"; // افترضنا أن صفحة اللعبة اسمها index.html
+        }
+
+        const uRef = db.ref(`users/${mID}`);
+
+        // تحديث البيانات لحظياً في المتجر
+        uRef.on('value', snap => {
+            const data = snap.val() || { gold: 0, skills: {} };
+            document.getElementById('gold-val').innerText = data.gold || 0;
+            
+            // تحديث عداد المخزون لكل مهارة
+            const skills = data.skills || {};
+            document.getElementById('inv-spy').innerText = skills.spy || 0;
+            document.getElementById('inv-skip').innerText = skills.skip || 0;
+            document.getElementById('inv-freeze').innerText = skills.freeze || 0;
+            document.getElementById('inv-erase').innerText = skills.erase || 0;
+        });
+
+        // وظيفة الشراء
+        function buy(skillId, price) {
+            uRef.transaction(user => {
+                if (!user) return user;
+                if ((user.gold || 0) < price) {
+                    notify("ذهبك غير كافٍ! 💸");
+                    return; // إلغاء العملية
+                }
+                
+                user.gold -= price;
+                if (!user.skills) user.skills = {};
+                user.skills[skillId] = (user.skills[skillId] || 0) + 1;
+                
+                notify("تم الشراء بنجاح! 🎉");
+                return user;
+            });
+        }
+
+        function notify(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2500);
+        }
+    </script>
+</body>
+</html>
