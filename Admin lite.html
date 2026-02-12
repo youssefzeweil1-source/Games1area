@@ -25,13 +25,15 @@
         .btn-unlock { background: #0f0; color: black; }
         .btn-reset { background: #ffcc00; color: black; width: 100%; }
         
-        /* ستايل رادار اللاعبين */
+        /* ستايل رادار اللاعبين المطور */
         .radar-card { background: #111; border: 2px solid #ffcc00; padding: 20px; border-radius: 25px; max-width: 600px; margin: 20px auto; }
-        .player-row { background: #000; padding: 15px; margin-bottom: 10px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border-right: 5px solid #0f0; text-align: right; }
+        .player-row { background: #000; padding: 15px; margin-bottom: 10px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border-right: 5px solid #0f0; text-align: right; transition: 0.3s; }
+        .player-row.offline { opacity: 0.5; border-right-color: #444; }
         .player-info b { color: #0f0; font-size: 1rem; }
         .player-info small { color: #888; display: block; margin-top: 3px; }
-        .btn-map { background: #00acee; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: bold; margin-left: 10px; }
+        .btn-map { background: #00acee; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: bold; margin-left: 5px; }
         .btn-ban-action { background: #ff003c; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+        .btn-del { background: #333; color: #888; border: none; padding: 8px 10px; border-radius: 8px; cursor: pointer; margin-left: 5px; }
 
         .footer { margin-top: 20px; font-size: 0.7rem; color: #444; }
     </style>
@@ -65,9 +67,9 @@
 </div>
 
 <div class="radar-card">
-    <h2>رادار الموقع الدقيق (GPS) 📡</h2>
+    <h2>سجل الزوار والرادار الدائم 📡</h2>
     <div id="players-list">
-        <p style="color: #444;">جاري البحث عن لاعبين نشطين...</p>
+        <p style="color: #444;">جاري البحث عن بيانات...</p>
     </div>
 </div>
 
@@ -80,40 +82,51 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- مراقبة رادار اللاعبين ---
+    // --- مراقبة الرادار (سجل دائم) ---
     db.ref('admin_security/active_players').on('value', (snapshot) => {
         const list = document.getElementById('players-list');
         list.innerHTML = "";
         const players = snapshot.val();
 
         if (!players) {
-            list.innerHTML = "<p style='color: #444;'>لا يوجد لاعبين متصلين حالياً.</p>";
+            list.innerHTML = "<p style='color: #444;'>السجل فارغ حالياً.</p>";
             return;
         }
 
         for (let id in players) {
             const p = players[id];
+            const isOnline = p.status === "متصل الآن";
             const row = document.createElement('div');
-            row.className = "player-row";
+            row.className = `player-row ${isOnline ? '' : 'offline'}`;
 
             const mapBtn = p.map 
                 ? `<a href="${p.map}" target="_blank" class="btn-map">📍 الخريطة</a>` 
-                : `<span style="color:#444; font-size:0.7rem;">الموقع محجوب</span>`;
+                : `<span style="color:#444; font-size:0.6rem; margin-left:5px;">بلا GPS</span>`;
 
             row.innerHTML = `
                 <div class="player-info">
-                    <b>ID: ${id}</b>
+                    <b>ID: ${id}</b> 
+                    <span style="font-size:0.7rem; color:${isOnline ? '#0f0' : '#ff003c'};">(${p.status || 'غائب'})</span>
+                    <small style="color:gold;">📍 تقريباً: ${p.approx || 'غير محدد'}</small>
                     <small>IP: ${p.ip}</small>
-                    <small>الغرفة: ${p.room || 'غير معروف'}</small>
+                    <small>الغرفة: ${p.room || '---'}</small>
                 </div>
                 <div style="display: flex; align-items: center;">
                     ${mapBtn}
-                    <button class="btn-ban-action" onclick="banIP('${p.ip}')">حظر 🚫</button>
+                    <button class="btn-ban-action" onclick="banIP('${p.ip}')">حظر</button>
+                    <button class="btn-del" onclick="deleteLog('${id}')">🗑️</button>
                 </div>
             `;
             list.appendChild(row);
         }
     });
+
+    // --- وظيفة حذف سجل زائر معين ---
+    function deleteLog(id) {
+        if (confirm("هل تريد مسح بيانات هذا الزائر من السجل نهائياً؟")) {
+            db.ref(`admin_security/active_players/${id}`).remove();
+        }
+    }
 
     // --- وظيفة الحظر لدقيقة ---
     function banIP(ip) {
