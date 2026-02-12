@@ -12,7 +12,6 @@
         
         body { background: #000; color: white; font-family: 'Cairo', sans-serif; margin: 0; text-align: center; overflow: hidden; touch-action: manipulation; }
         
-        /* شريط العملات والنقاط الجديد */
         #player-stats-bar {
             position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.85); padding: 5px 20px; border-radius: 50px;
@@ -51,7 +50,6 @@
             box-shadow: 0 0 15px var(--main);
         }
 
-        /* زر المتجر */
         #store-btn {
             position: fixed; top: 15px; left: 15px; background: var(--gold);
             color: black; border-radius: 10px; padding: 10px 15px;
@@ -59,7 +57,6 @@
             box-shadow: 0 0 15px var(--gold); border: none;
         }
 
-        /* شريط المهارات أثناء اللعب */
         #skills-overlay {
             position: fixed; bottom: 100px; right: 20px;
             display: flex; flex-direction: column; gap: 10px; z-index: 1000;
@@ -285,7 +282,7 @@
 
     const messageSound = new Audio('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/mixkit-software-interface-start-2574.wav');
 
-    let rID, mID, rRef, uRef, myRole = "", canAction = true;
+    let rID, mID, rRef, uRef, myRole = "", canAction = true, rewardClaimed = false;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
     const gameNames = { 'war': 'السرعة ⚡', 'sh': 'الشايب 🤡', 'bomb': 'القنبلة 💣', 'xo': 'XO ⭕', 'ludo': 'لودو 🎲' };
     const globalPath = [[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0]];
@@ -295,17 +292,15 @@
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
     function giveReward(type) {
-        if (!uRef) return;
+        if (!uRef || rewardClaimed) return;
+        rewardClaimed = true; 
         uRef.transaction(user => {
             if (!user) user = { gold: 0, points: 0, skills: {} };
-            if (type === 'win') {
-                user.gold = (user.gold || 0) + 50;
-                showBigMsg("مبروك! +50 جولد 💰");
-            } else if (type === 'draw') {
-                user.points = (user.points || 0) + 10;
-                showBigMsg("تعادل! +10 نقاط ⭐");
-            }
+            if (type === 'win') user.gold = (user.gold || 0) + 50;
+            else if (type === 'draw') user.points = (user.points || 0) + 10;
             return user;
+        }, (err, commit, snap) => {
+            if(commit) showBigMsg(type === 'win' ? "مبروك! +50 جولد 💰" : "تعادل! +10 نقاط ⭐");
         });
     }
 
@@ -337,12 +332,8 @@
     function joinRoom() {
         rID = document.getElementById('room').value.trim();
         if(!rID) return alert("دخل كود الغرفة!");
-        
-        mID = localStorage.getItem('arena_user_id');
-        if(!mID) {
-            mID = "U" + Math.floor(Math.random()*9999);
-            localStorage.setItem('arena_user_id', mID);
-        }
+        mID = localStorage.getItem('arena_user_id') || ("U" + Math.floor(Math.random()*9999));
+        localStorage.setItem('arena_user_id', mID);
         
         rRef = db.ref(`final_arena_v4/${rID}`);
         uRef = db.ref(`users/${mID}`);
@@ -351,17 +342,13 @@
             const data = snap.val() || { gold: 0, points: 0, skills: {} };
             document.getElementById('my-gold-display').innerText = data.gold || 0;
             document.getElementById('my-points-display').innerText = data.points || 0;
-            
             const skills = data.skills || {};
-            // تحديث عدادات كل المهارات
-            const sList = ['spy', 'skip', 'freeze', 'erase'];
-            sList.forEach(id => {
+            ['spy', 'skip', 'freeze', 'erase'].forEach(id => {
                 const count = skills[id] || 0;
                 const btn = document.getElementById(`skill-${id}-btn`);
                 const counter = document.getElementById(`count-${id}`);
                 if(btn && counter) {
                     counter.innerText = count;
-                    // تظهر المهارة فقط لو اللاعب يملكها
                     if(count > 0) btn.classList.remove('hidden');
                     else btn.classList.add('hidden');
                 }
@@ -376,13 +363,10 @@
         }, (err, comm, snap) => {
             const s = snap.val() || {};
             myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
-            
             if(myRole !== "viewer") {
                 rRef.child(`slots/${myRole}`).onDisconnect().remove();
                 rRef.child(`ready/${myRole}`).onDisconnect().remove();
-                rRef.child(`votes/${myRole}`).onDisconnect().remove();
             }
-            
             document.getElementById('music-btn').classList.remove('hidden');
             document.getElementById('store-btn').classList.remove('hidden');
             document.getElementById('player-stats-bar').classList.remove('hidden');
@@ -404,8 +388,6 @@
         setTimeout(() => {
             document.getElementById('rematch-modal').classList.remove('hidden');
             document.getElementById('rematch-votes-display').innerText = "في انتظار قرار الخصم...";
-            document.getElementById('rematch-yes').disabled = false;
-            document.getElementById('rematch-yes').style.opacity = "1";
         }, 2000);
     }
 
@@ -424,24 +406,17 @@
             if (ready.p1 && ready.p2 && d.gameState !== 'playing') {
                 document.getElementById('lobby').classList.add('hidden');
                 document.getElementById('voting-screen').classList.remove('hidden');
-            } else if (d.gameState !== 'playing') {
-                document.getElementById('voting-screen').classList.add('hidden');
             }
-
             if (votes.p1 && votes.p2 && votes.p1 === votes.p2 && d.gameState !== 'playing') {
                 rRef.child('activeTab').set(votes.p1);
                 rRef.child('gameState').set('playing');
             }
-
             if (d.gameState === 'playing') {
                 document.getElementById('lobby').classList.add('hidden');
                 document.getElementById('voting-screen').classList.add('hidden');
                 document.getElementById('game-ui').classList.remove('hidden');
                 document.getElementById('skills-overlay').classList.remove('hidden');
-                
-                // تحديث رؤية المهارات حسب اللعبة المختارة
                 updateSkillsVisibility(d.activeTab);
-                
                 initXO();
                 drawLudoBoard();
                 startListeners();
@@ -451,18 +426,11 @@
         rRef.child('active_skill').on('value', snap => {
             const skill = snap.val();
             if (!skill || skill.by === myRole) return;
-            
             if (skill.type === 'freeze') {
-                canAction = false;
-                showBigMsg("الخصم جمد أعصابك! ❄️");
+                canAction = false; showBigMsg("الخصم جمد أعصابك! ❄️");
                 document.body.style.filter = "blur(4px) grayscale(1)";
                 setTimeout(() => { canAction = true; document.body.style.filter = ""; }, 3000);
-            } else if (skill.type === 'skip') {
-                showBigMsg("الخصم هرب وتخطى دوره! 🏃‍♂️");
-            } else if (skill.type === 'erase') {
-                showBigMsg("الخصم مسح حركتك بالاستيكة! 🧽");
             }
-            
             if (myRole === 'p1') setTimeout(() => rRef.child('active_skill').remove(), 3200);
         });
 
@@ -474,7 +442,7 @@
             const box = document.getElementById('chat-messages');
             if(box) { box.appendChild(div); box.scrollTop = box.scrollHeight; }
             if(m.sender !== myRole) {
-                messageSound.play().catch(e => console.log("الصوت محجوب"));
+                messageSound.play().catch(e => {});
                 document.getElementById('chat-toggle').classList.add('new-msg');
             }
         });
@@ -488,13 +456,8 @@
         });
     }
 
-    // دالة مهمة: تُظهر زر المهارة المناسب فقط للعبة الحالية
     function updateSkillsVisibility(game) {
-        document.getElementById('skill-spy-btn').style.display = 'none';
-        document.getElementById('skill-skip-btn').style.display = 'none';
-        document.getElementById('skill-freeze-btn').style.display = 'none';
-        document.getElementById('skill-erase-btn').style.display = 'none';
-
+        ['spy','skip','freeze','erase'].forEach(id => document.getElementById(`skill-${id}-btn`).style.display = 'none');
         if(game === 'sh') document.getElementById('skill-spy-btn').style.display = 'flex';
         if(game === 'bomb') document.getElementById('skill-skip-btn').style.display = 'flex';
         if(game === 'war') document.getElementById('skill-freeze-btn').style.display = 'flex';
@@ -514,7 +477,7 @@
             const myH = (myRole==='p1'?d.p1:d.p2);
             document.getElementById('my-war').style.height = myH + "%";
             document.getElementById('op-war').style.height = (100-myH) + "%";
-            if(d.status === 'done' && !document.getElementById('rematch-modal').classList.contains('open')) {
+            if(d.status === 'done') {
                 if(d.winner === myRole) giveReward('win');
                 handleGameOver(d.winner === myRole ? getRandom(wins) : getRandom(insults));
             }
@@ -572,8 +535,7 @@
         rRef.child('bomb').once('value', s => {
             const d = s.val() || {val:0, limit: Math.floor(Math.random()*20)+40, turn:'p1'};
             if(d.turn !== myRole || d.status === 'exploded' || !canAction) return;
-            let nv = d.val + n;
-            let exp = nv >= d.limit;
+            let nv = d.val + n; let exp = nv >= d.limit;
             rRef.child('bomb').update({ val:nv, turn:(myRole==='p1'?'p2':'p1'), status:exp?'exploded':'playing', limit:d.limit });
         });
     }
@@ -582,8 +544,7 @@
         const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
         let deck = [];
         ['H','S','D','C'].forEach(s => ranks.forEach(r => deck.push({r, s})));
-        deck.splice(Math.floor(Math.random() * 52), 1); 
-        deck.push({r:'SHAIEB', s:'🤡'});
+        deck.splice(Math.floor(Math.random() * 52), 1); deck.push({r:'SHAIEB', s:'🤡'});
         deck = deck.sort(() => Math.random() - 0.5);
         const removePairs = (arr) => {
             let counts = {}; arr.forEach(c => { if(c.r !== 'SHAIEB') counts[c.r] = (counts[c.r] || 0) + 1; });
@@ -600,13 +561,13 @@
         const opB = document.getElementById('op-area'); opB.innerHTML = "";
         opC.forEach((c,i) => { 
             let v = document.createElement('div'); v.className="card back"; 
-            // مهارة التجسس (كشف المستور)
             rRef.child('active_skill').once('value', sk => {
                 const s = sk.val();
-                if(s && s.type === 'spy' && s.by === myRole && (Date.now() - s.time < 2000)) {
+                if(s && s.type === 'spy' && s.by === myRole && (Date.now() - s.time < 1500)) {
                     v.classList.remove('back');
                     v.classList.add('HD'.includes(c.s)?'red':'');
                     v.innerHTML = `<span>${c.r==='SHAIEB'?'🤡':c.r+syms[c.s]}</span>`;
+                    setTimeout(() => { v.classList.add('back'); v.innerHTML=""; }, 1500);
                 }
             });
             v.onclick=()=>pullSh(i); opB.appendChild(v); 
@@ -617,8 +578,7 @@
             v.innerHTML = `<span>${c.r==='SHAIEB'?'🤡':c.r+syms[c.s]}</span>`; myB.appendChild(v);
         });
         if(myC.length === 0 && d.status === 'playing') {
-            giveReward('win');
-            rRef.child('sh/status').set('done');
+            giveReward('win'); rRef.child('sh/status').set('done');
             handleGameOver("هربت بالسلامة! " + getRandom(wins));
         }
     }
@@ -637,7 +597,7 @@
     }
 
     function initXO() {
-        const b = document.getElementById('xo-board'); b.innerHTML = "";
+        const b = document.getElementById('xo-board'); if(!b) return; b.innerHTML = "";
         for(let i=0; i<9; i++) { let v = document.createElement('div'); v.className="cell"; v.onclick=()=>tapXO(i); b.appendChild(v); }
     }
     function tapXO(i) {
@@ -645,16 +605,6 @@
         rRef.child('xo').once('value', s => {
             let d = s.val() || { b: Array(9).fill(""), turn: "p1" };
             if(myRole !== d.turn || d.b[i] || d.win) return;
-            
-            // دعم مهارة الاستيكة (مسح آخر علامة)
-            rRef.child('active_skill').once('value', sk => {
-                const skill = sk.val();
-                if(skill && skill.type === 'erase' && skill.by === myRole) {
-                    // لم يضع اللاعب علامة بعد، لكن المهارة مسحت آخر حركة للخصم
-                    // هذا يتم برمجياً عند تفعيل المهارة نفسها
-                }
-            });
-
             d.b[i] = (myRole === 'p1') ? 'X' : 'O';
             const wns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
             wns.forEach(w => { if(d.b[w[0]] && d.b[w[0]]===d.b[w[1]] && d.b[w[0]]===d.b[w[2]]) { d.win=d.b[w[0]]; d.winRole=myRole; } });
@@ -708,7 +658,8 @@
     }
 
     function resetCurrentGame() {
-        canAction = true; if (myRole !== 'p1') return;
+        canAction = true; rewardClaimed = false; 
+        if (myRole !== 'p1') return;
         rRef.child('activeTab').once('value', s => {
             const game = s.val(); const up = { rematch: null, gameState: 'playing' };
             if (game === 'war') up.war = {p1:50, p2:50, status:'playing'};
