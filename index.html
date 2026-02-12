@@ -119,7 +119,8 @@
         .hidden { display: none !important; }
         .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px 40px; border-radius: 25px; font-weight: 900; font-size: 1.4rem; z-index: 100005; text-align: center; border: 5px solid var(--main); line-height: 1.4; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
 
-        #chat-container { 
+        /* تعديلات القوائم (شات ومهام) */
+        .side-container { 
             position: fixed; bottom: 85px; left: 15px; width: 300px; height: 420px; 
             background: rgba(0,0,0,0.92); border: 2.5px solid var(--main); border-radius: 25px; 
             z-index: 1000; display: flex; flex-direction: column; 
@@ -129,7 +130,8 @@
             backdrop-filter: blur(15px); box-shadow: 0 15px 50px rgba(0,0,0,0.8);
             pointer-events: none;
         }
-        #chat-container.open { transform: translateX(0) scale(1); opacity: 1; pointer-events: auto; }
+        .side-container.open { transform: translateX(0) scale(1); opacity: 1; pointer-events: auto; }
+        
         #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
         .msg { padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; max-width: 85%; word-wrap: break-word; line-height: 1.4; animation: slideInFromLeft 0.3s ease forwards; }
         @keyframes slideInFromLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
@@ -138,9 +140,23 @@
         .msg.him { background: #222; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; border: 1px solid #444; text-align: right; }
         #chat-input-area { display: flex; padding: 15px; border-top: 1px solid #333; gap: 8px; }
         #chat-input { flex: 1; background: #151515; border: 1.5px solid #333; color: white; border-radius: 12px; padding: 10px; font-family: 'Cairo'; outline: none; }
-        #chat-toggle { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: var(--main); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1001; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); font-size: 1.8rem; transition: 0.3s; }
-        #chat-toggle.new-msg { background: #ffcc00; animation: pulse 0.5s infinite; }
+        
+        .side-toggle { position: fixed; left: 20px; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1001; cursor: pointer; transition: 0.3s; font-size: 1.8rem; }
+        #chat-toggle { bottom: 20px; background: var(--main); box-shadow: 0 0 20px rgba(0,255,0,0.4); }
+        #quest-toggle { bottom: 90px; background: var(--shaieb); box-shadow: 0 0 20px rgba(255,204,0,0.4); }
+        
+        .side-toggle.new-msg { background: #ffcc00; animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* ستايل المهام */
+        .quest-item { background: #111; border: 1px solid #333; margin: 10px; padding: 15px; border-radius: 15px; text-align: right; }
+        .quest-item h4 { margin: 0; color: var(--shaieb); font-size: 0.9rem; }
+        .quest-item p { margin: 5px 0; font-size: 0.8rem; color: #ccc; }
+        .claim-btn { background: #444; color: #888; border: none; padding: 6px 15px; border-radius: 10px; cursor: not-allowed; font-weight: bold; margin-top: 5px; width: 100%; transition: 0.3s; }
+        .claim-btn.ready { background: var(--main); color: black; cursor: pointer; box-shadow: 0 0 10px var(--main); }
+        .claim-btn.claimed { background: #222; color: #555; cursor: default; }
+        
+        .quest-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.8rem; padding: 3px 7px; border-radius: 50%; font-weight: bold; border: 2px solid #000; display: none; }
 
         #chat-pop-notif {
             position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
@@ -180,11 +196,40 @@
 </div>
 
 <div id="chat-pop-notif">رسالة جديدة! ✉️</div>
-<div id="chat-toggle" onclick="toggleChat()">💬</div>
-<div id="chat-container">
+
+<div id="quest-toggle" class="side-toggle" onclick="toggleSidePanel('quest-container')">
+    📜 <span id="quest-notif-badge" class="quest-badge">0</span>
+</div>
+<div id="chat-toggle" class="side-toggle" onclick="toggleSidePanel('chat-container')">💬</div>
+
+<div id="quest-container" class="side-container">
+    <div style="padding:15px; background:var(--shaieb); color:black; font-weight:900; border-radius:20px 20px 0 0; display:flex; justify-content:space-between; align-items:center;">
+        <span>المهام اليومية</span>
+        <span onclick="toggleSidePanel('quest-container')" style="cursor:pointer; font-size:1.5rem;">×</span>
+    </div>
+    <div style="flex:1; overflow-y:auto; padding-bottom:10px;">
+        <div class="quest-item">
+            <h4>تسجيل الدخول</h4>
+            <p>ادخل اللعبة يومياً (+40 جولد)</p>
+            <button id="q-login-btn" class="claim-btn" onclick="claimDaily('login')">حصول</button>
+        </div>
+        <div class="quest-item">
+            <h4>المتحدث الرسمي</h4>
+            <p>أرسل أول رسالة في الشات اليوم (<span id="q-chat-prog">0/1</span>)</p>
+            <button id="q-chat-btn" class="claim-btn" onclick="claimDaily('chat')">حصول</button>
+        </div>
+        <div class="quest-item">
+            <h4>صائد الانتصارات</h4>
+            <p>فز في أي جولة الآن (<span id="q-win-prog">0/1</span>)</p>
+            <button id="q-win-btn" class="claim-btn" onclick="claimDaily('win')">حصول</button>
+        </div>
+    </div>
+</div>
+
+<div id="chat-container" class="side-container">
     <div style="padding:15px; background:var(--main); color:black; font-weight:900; border-radius:20px 20px 0 0; display:flex; justify-content:space-between; align-items:center;">
         <span>C H A T</span>
-        <span onclick="toggleChat()" style="cursor:pointer; font-size:1.5rem;">×</span>
+        <span onclick="toggleSidePanel('chat-container')" style="cursor:pointer; font-size:1.5rem;">×</span>
     </div>
     <div id="chat-messages"></div>
     <div id="chat-input-area">
@@ -291,6 +336,60 @@
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+    // --- نظام المهام المطور ---
+    function toggleSidePanel(id) {
+        const target = document.getElementById(id);
+        const isOpen = target.classList.contains('open');
+        document.querySelectorAll('.side-container').forEach(c => c.classList.remove('open'));
+        if (!isOpen) target.classList.add('open');
+        if (id === 'chat-container') document.getElementById('chat-toggle').classList.remove('new-msg');
+    }
+
+    function updateQuestUI(user) {
+        const today = new Date().toDateString();
+        const quests = [
+            { id: 'login', done: user.lastLogin === today, claimed: user.lastLoginClaim === today },
+            { id: 'chat', done: user.lastChatDay === today, claimed: user.lastChatClaim === today },
+            { id: 'win', done: user.tempWin === true, claimed: user.lastWinClaim === today }
+        ];
+
+        let readyCount = 0;
+        quests.forEach(q => {
+            const btn = document.getElementById(`q-${q.id}-btn`);
+            const prog = document.getElementById(`q-${q.id}-prog`);
+            if (prog) prog.innerText = q.done ? "1/1" : "0/1";
+
+            if (q.claimed) {
+                btn.innerText = "تم الاستلام"; btn.className = "claim-btn claimed"; btn.disabled = true;
+            } else if (q.done) {
+                btn.innerText = "حصول"; btn.className = "claim-btn ready"; btn.disabled = false;
+                readyCount++;
+            } else {
+                btn.innerText = "حصول"; btn.className = "claim-btn"; btn.disabled = true;
+            }
+        });
+
+        const badge = document.getElementById('quest-notif-badge');
+        if (readyCount > 0) { badge.innerText = readyCount; badge.style.display = 'block'; }
+        else { badge.style.display = 'none'; }
+    }
+
+    function claimDaily(type) {
+        const today = new Date().toDateString();
+        uRef.transaction(user => {
+            if (!user) return;
+            if (type === 'login' && user.lastLogin === today && user.lastLoginClaim !== today) {
+                user.gold = (user.gold || 0) + 40; user.lastLoginClaim = today;
+            } else if (type === 'chat' && user.lastChatDay === today && user.lastChatClaim !== today) {
+                user.gold = (user.gold || 0) + 20; user.lastChatClaim = today;
+            } else if (type === 'win' && user.tempWin === true && user.lastWinClaim !== today) {
+                user.gold = (user.gold || 0) + 50; user.lastWinClaim = today; user.tempWin = false;
+            }
+            return user;
+        }, (err, comm) => { if(comm) showBigMsg("تم استلام الجائزة! 💰"); });
+    }
+    // --- نهاية نظام المهام ---
+
     function giveReward(type) {
         if (!uRef || rewardClaimed) return;
         rewardClaimed = true; 
@@ -299,6 +398,7 @@
             if (type === 'win') {
                 user.gold = (user.gold || 0) + 50;
                 user.totalWins = (user.totalWins || 0) + 1;
+                user.tempWin = true; // علامة لمهمة الفوز اليومية
                 if (user.totalWins % 3 === 0) user.gold += 100;
             }
             else if (type === 'draw') user.points = (user.points || 0) + 10;
@@ -318,14 +418,11 @@
         uRef.transaction(user => {
             if (user) {
                 if (user.lastLogin !== today) {
-                    user.gold = (user.gold || 0) + 40;
                     user.lastLogin = today;
                     return user;
                 }
             }
             return;
-        }, (err, comm, snap) => {
-            if (comm) showBigMsg("هدية تسجيل دخول يومي! +40 جولد 💰");
         });
     }
 
@@ -334,14 +431,11 @@
         uRef.transaction(user => {
             if (user) {
                 if (user.lastChatDay !== today) {
-                    user.gold = (user.gold || 0) + 20;
                     user.lastChatDay = today;
                     return user;
                 }
             }
             return;
-        }, (err, comm, snap) => {
-            if (comm) showBigMsg("أول رسالة اليوم! +20 جولد ✉️");
         });
     }
 
@@ -370,11 +464,7 @@
         });
     }
 
-    function toggleChat() {
-        const chat = document.getElementById('chat-container');
-        chat.classList.toggle('open');
-        document.getElementById('chat-toggle').classList.remove('new-msg');
-    }
+    function toggleChat() { toggleSidePanel('chat-container'); }
     
     function sendChat() {
         const inp = document.getElementById('chat-input');
@@ -406,7 +496,6 @@
             myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
             
             if(myRole !== "viewer") {
-                // تصفير الغرفة بالكامل عند الخروج (المتصل يطرد تلقائياً)
                 rRef.onDisconnect().remove(); 
             }
 
@@ -425,6 +514,9 @@
             const data = snap.val() || { gold: 0, points: 0, skills: {} };
             document.getElementById('my-gold-display').innerText = data.gold || 0;
             document.getElementById('my-points-display').innerText = data.points || 0;
+            
+            updateQuestUI(data); // تحديث المهام مع كل تغيير في الداتا
+
             const skills = data.skills || {};
             ['spy', 'skip', 'freeze', 'erase'].forEach(id => {
                 const count = skills[id] || 0;
@@ -457,7 +549,6 @@
     function listenLobby() {
         rRef.on('value', snap => {
             const d = snap.val();
-            // إذا تم مسح الغرفة (بسبب خروج الخصم) ارجع للرئيسية
             if (!d && myRole !== "viewer") { location.reload(); return; }
             
             const slots = d.slots || {};
@@ -489,11 +580,10 @@
             }
         });
 
-        // مراقبة المهارات (الإشعارات)
         rRef.child('active_skill').on('value', snap => {
             const skill = snap.val();
             if (!skill) return;
-            if (skill.by === myRole) return; // لا تظهر إشعار لنفسك
+            if (skill.by === myRole) return; 
 
             const skillNames = {'freeze':'تجميد ❄️', 'spy':'تجسس 👁️', 'skip':'تخطي 🏃‍♂️', 'erase':'ممحاة 🧽'};
             showBigMsg(`الخصم استخدم مهارة: ${skillNames[skill.type]}`);
@@ -504,7 +594,6 @@
                 setTimeout(() => { canAction = true; document.body.style.filter = ""; }, 3000);
             }
 
-            // مسح المهارة بعد وقت قصير لتنتهي العملية
             if (myRole === 'p1') {
                 setTimeout(() => rRef.child('active_skill').remove(), 2000);
             }
