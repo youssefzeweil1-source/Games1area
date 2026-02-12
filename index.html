@@ -169,8 +169,10 @@
 <div id="music-btn" class="hidden" onclick="toggleMusicModal()">الموسيقى 🎵</div>
 
 <div id="skills-overlay" class="hidden">
-    <div id="skill-freeze-btn" class="skill-use-btn hidden" onclick="useSkill('freeze')" style="background: #00f;">❄️ <span class="skill-count" id="count-freeze">0</span></div>
+    <div id="skill-spy-btn" class="skill-use-btn hidden" onclick="useSkill('spy')" style="background: var(--shaieb);">👁️ <span class="skill-count" id="count-spy">0</span></div>
     <div id="skill-skip-btn" class="skill-use-btn hidden" onclick="useSkill('skip')" style="background: #f0f;">🏃‍♂️ <span class="skill-count" id="count-skip">0</span></div>
+    <div id="skill-freeze-btn" class="skill-use-btn hidden" onclick="useSkill('freeze')" style="background: #00f;">❄️ <span class="skill-count" id="count-freeze">0</span></div>
+    <div id="skill-erase-btn" class="skill-use-btn hidden" onclick="useSkill('erase')" style="background: #555;">🧽 <span class="skill-count" id="count-erase">0</span></div>
 </div>
 
 <div id="music-modal">
@@ -292,7 +294,6 @@
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-    // دالة توزيع الجوائز الجديدة
     function giveReward(type) {
         if (!uRef) return;
         uRef.transaction(user => {
@@ -308,8 +309,8 @@
         });
     }
 
-    // وظيفة استخدام مهارة
     function useSkill(skillId) {
+        if(!canAction) return;
         uRef.child('skills').transaction(skills => {
             if (skills && skills[skillId] > 0) {
                 skills[skillId] -= 1;
@@ -346,23 +347,25 @@
         rRef = db.ref(`final_arena_v4/${rID}`);
         uRef = db.ref(`users/${mID}`);
 
-        // ربط شريط البيانات والجولد
         uRef.on('value', snap => {
             const data = snap.val() || { gold: 0, points: 0, skills: {} };
             document.getElementById('my-gold-display').innerText = data.gold || 0;
             document.getElementById('my-points-display').innerText = data.points || 0;
             
-            // تحديث أزرار المهارات
             const skills = data.skills || {};
-            if(skills.freeze > 0) { 
-                document.getElementById('skill-freeze-btn').classList.remove('hidden');
-                document.getElementById('count-freeze').innerText = skills.freeze;
-            } else { document.getElementById('skill-freeze-btn').classList.add('hidden'); }
-            
-            if(skills.skip > 0) { 
-                document.getElementById('skill-skip-btn').classList.remove('hidden');
-                document.getElementById('count-skip').innerText = skills.skip;
-            } else { document.getElementById('skill-skip-btn').classList.add('hidden'); }
+            // تحديث عدادات كل المهارات
+            const sList = ['spy', 'skip', 'freeze', 'erase'];
+            sList.forEach(id => {
+                const count = skills[id] || 0;
+                const btn = document.getElementById(`skill-${id}-btn`);
+                const counter = document.getElementById(`count-${id}`);
+                if(btn && counter) {
+                    counter.innerText = count;
+                    // تظهر المهارة فقط لو اللاعب يملكها
+                    if(count > 0) btn.classList.remove('hidden');
+                    else btn.classList.add('hidden');
+                }
+            });
         });
 
         rRef.child('slots').transaction(s => {
@@ -435,22 +438,31 @@
                 document.getElementById('voting-screen').classList.add('hidden');
                 document.getElementById('game-ui').classList.remove('hidden');
                 document.getElementById('skills-overlay').classList.remove('hidden');
+                
+                // تحديث رؤية المهارات حسب اللعبة المختارة
+                updateSkillsVisibility(d.activeTab);
+                
                 initXO();
                 drawLudoBoard();
                 startListeners();
             }
         });
 
-        // مراقبة المهارات المفعلة
         rRef.child('active_skill').on('value', snap => {
             const skill = snap.val();
             if (!skill || skill.by === myRole) return;
+            
             if (skill.type === 'freeze') {
                 canAction = false;
                 showBigMsg("الخصم جمد أعصابك! ❄️");
                 document.body.style.filter = "blur(4px) grayscale(1)";
                 setTimeout(() => { canAction = true; document.body.style.filter = ""; }, 3000);
+            } else if (skill.type === 'skip') {
+                showBigMsg("الخصم هرب وتخطى دوره! 🏃‍♂️");
+            } else if (skill.type === 'erase') {
+                showBigMsg("الخصم مسح حركتك بالاستيكة! 🧽");
             }
+            
             if (myRole === 'p1') setTimeout(() => rRef.child('active_skill').remove(), 3200);
         });
 
@@ -476,13 +488,25 @@
         });
     }
 
-    // --- وظائف الألعاب مع إضافة الجوائز ---
+    // دالة مهمة: تُظهر زر المهارة المناسب فقط للعبة الحالية
+    function updateSkillsVisibility(game) {
+        document.getElementById('skill-spy-btn').style.display = 'none';
+        document.getElementById('skill-skip-btn').style.display = 'none';
+        document.getElementById('skill-freeze-btn').style.display = 'none';
+        document.getElementById('skill-erase-btn').style.display = 'none';
+
+        if(game === 'sh') document.getElementById('skill-spy-btn').style.display = 'flex';
+        if(game === 'bomb') document.getElementById('skill-skip-btn').style.display = 'flex';
+        if(game === 'war') document.getElementById('skill-freeze-btn').style.display = 'flex';
+        if(game === 'xo') document.getElementById('skill-erase-btn').style.display = 'flex';
+    }
 
     function startListeners() {
         rRef.child('activeTab').on('value', s => {
             const t = s.val() || 'war';
             ['war','sh','bomb','xo','ludo'].forEach(id => document.getElementById(id+'-ui').classList.add('hidden'));
             document.getElementById(t+'-ui').classList.remove('hidden');
+            updateSkillsVisibility(t);
         });
 
         rRef.child('war').on('value', s => {
@@ -532,9 +556,6 @@
         });
     }
 
-    // (كل الدوال الأخرى: tapWar, addBomb, setupSh, renderSh, pullSh, initXO, tapXO, drawLudoBoard, rollLudo, renderPawn, showBigMsg, clearRoom) 
-    // تبقى كما هي تماماً من الكود الأصلي لضمان عمل الألعاب بنفس الميكانيكا
-
     function tapWar(e) {
         if(myRole==='viewer' || !canAction) return;
         rRef.child('war').transaction(d => {
@@ -550,7 +571,7 @@
     function addBomb(n) {
         rRef.child('bomb').once('value', s => {
             const d = s.val() || {val:0, limit: Math.floor(Math.random()*20)+40, turn:'p1'};
-            if(d.turn !== myRole || d.status === 'exploded') return;
+            if(d.turn !== myRole || d.status === 'exploded' || !canAction) return;
             let nv = d.val + n;
             let exp = nv >= d.limit;
             rRef.child('bomb').update({ val:nv, turn:(myRole==='p1'?'p2':'p1'), status:exp?'exploded':'playing', limit:d.limit });
@@ -577,7 +598,19 @@
         const myC = (myRole==='p1'?d.p1C:d.p2C) || [], opC = (myRole==='p1'?d.p2C:d.p1C) || [];
         document.getElementById('sh-stat').innerText = (d.turn === myRole) ? "اسحب ورقة من الضحية" : "بيسحب منك.. يا رب مياخدش الشايب";
         const opB = document.getElementById('op-area'); opB.innerHTML = "";
-        opC.forEach((_,i) => { let v = document.createElement('div'); v.className="card back"; v.onclick=()=>pullSh(i); opB.appendChild(v); });
+        opC.forEach((c,i) => { 
+            let v = document.createElement('div'); v.className="card back"; 
+            // مهارة التجسس (كشف المستور)
+            rRef.child('active_skill').once('value', sk => {
+                const s = sk.val();
+                if(s && s.type === 'spy' && s.by === myRole && (Date.now() - s.time < 2000)) {
+                    v.classList.remove('back');
+                    v.classList.add('HD'.includes(c.s)?'red':'');
+                    v.innerHTML = `<span>${c.r==='SHAIEB'?'🤡':c.r+syms[c.s]}</span>`;
+                }
+            });
+            v.onclick=()=>pullSh(i); opB.appendChild(v); 
+        });
         const myB = document.getElementById('my-area'); myB.innerHTML = "";
         myC.forEach(c => {
             let v = document.createElement('div'); v.className=`card ${'HD'.includes(c.s)?'red':''} ${c.r==='SHAIEB'?'shaieb':''}`;
@@ -608,9 +641,20 @@
         for(let i=0; i<9; i++) { let v = document.createElement('div'); v.className="cell"; v.onclick=()=>tapXO(i); b.appendChild(v); }
     }
     function tapXO(i) {
+        if(!canAction) return;
         rRef.child('xo').once('value', s => {
             let d = s.val() || { b: Array(9).fill(""), turn: "p1" };
             if(myRole !== d.turn || d.b[i] || d.win) return;
+            
+            // دعم مهارة الاستيكة (مسح آخر علامة)
+            rRef.child('active_skill').once('value', sk => {
+                const skill = sk.val();
+                if(skill && skill.type === 'erase' && skill.by === myRole) {
+                    // لم يضع اللاعب علامة بعد، لكن المهارة مسحت آخر حركة للخصم
+                    // هذا يتم برمجياً عند تفعيل المهارة نفسها
+                }
+            });
+
             d.b[i] = (myRole === 'p1') ? 'X' : 'O';
             const wns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
             wns.forEach(w => { if(d.b[w[0]] && d.b[w[0]]===d.b[w[1]] && d.b[w[0]]===d.b[w[2]]) { d.win=d.b[w[0]]; d.winRole=myRole; } });
@@ -631,7 +675,7 @@
     }
 
     function rollLudo() {
-        if(myRole === 'viewer') return;
+        if(myRole === 'viewer' || !canAction) return;
         rRef.child('ludo').once('value', s => {
             let d = s.val() || { turn: 'p1', p1Pos: -1, p2Pos: -1 };
             if (d.turn !== myRole) return;
