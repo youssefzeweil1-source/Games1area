@@ -21,7 +21,7 @@
 
         .bg-panoramic {
             position: fixed; top: 0; left: 0; width: 400%; height: 100%;
-            background: url('https://raw.githubusercontent.com/youssefzeweil1-source/Games1area/main/bg.png') repeat-x;
+            background: url('https://raw.githubusercontent.com/youssefweil1-source/Games1area/main/bg.png') repeat-x;
             background-size: contain; z-index: -1;
             animation: moveBg 60s linear infinite alternate;
             filter: brightness(0.3);
@@ -123,7 +123,7 @@
         .side-container { 
             position: fixed; bottom: 85px; left: 15px; width: 300px; height: 420px; 
             background: rgba(0,0,0,0.92); border: 2.5px solid var(--main); border-radius: 25px; 
-            z-index: 1000; display: flex; flex-direction: column; 
+            z-index: 2000; display: flex; flex-direction: column; 
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
             transform: translateX(-110%) scale(0.9);
             opacity: 0; transform-origin: left bottom; 
@@ -138,40 +138,14 @@
         
         .msg.me { background: var(--main); color: #000; align-self: flex-start; border-bottom-left-radius: 2px; font-weight: bold; text-align: right; }
         .msg.him { background: #222; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; border: 1px solid #444; text-align: right; }
+        #chat-input-area { display: flex; padding: 15px; border-top: 1px solid #333; gap: 8px; }
+        #chat-input { flex: 1; background: #151515; border: 1.5px solid #333; color: white; border-radius: 12px; padding: 10px; font-family: 'Cairo'; outline: none; }
         
-        /* التعديل المصلح هنا لمنطقة الشات */
-        #chat-input-area { 
-            display: flex; 
-            padding: 15px; 
-            border-top: 1px solid #333; 
-            gap: 8px; 
-            align-items: center;
-            z-index: 10;
-        }
-        #chat-input { 
-            flex: 1; 
-            min-width: 0; /* يمنع الحقل من تخطي المساحة */
-            background: #151515; 
-            border: 1.5px solid #333; 
-            color: white; 
-            border-radius: 12px; 
-            padding: 10px; 
-            font-family: 'Cairo'; 
-            outline: none; 
-        }
-        #chat-send-btn {
-            flex-shrink: 0; /* يضمن إن الزرار ميتضغطش */
-            background: var(--main); 
-            border: none; 
-            border-radius: 10px; 
-            padding: 10px 15px; 
-            cursor: pointer; 
-            font-weight: bold;
-        }
+        .side-toggle { position: fixed; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2001; cursor: pointer; transition: 0.3s; font-size: 1.8rem; }
         
-        .side-toggle { position: fixed; left: 20px; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1001; cursor: pointer; transition: 0.3s; font-size: 1.8rem; }
-        #chat-toggle { bottom: 20px; background: var(--main); box-shadow: 0 0 20px rgba(0,255,0,0.4); }
-        #quest-toggle { bottom: 90px; background: var(--shaieb); box-shadow: 0 0 20px rgba(255,204,0,0.4); }
+        /* تم تعديل المواقع هنا لمنع التداخل */
+        #chat-toggle { bottom: 20px; left: 20px; background: var(--main); box-shadow: 0 0 20px rgba(0,255,0,0.4); }
+        #quest-toggle { bottom: 20px; left: 90px; background: var(--shaieb); box-shadow: 0 0 20px rgba(255,204,0,0.4); }
         
         .side-toggle.new-msg { background: #ffcc00; animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -251,6 +225,11 @@
             <p>فز في أي جولة الآن (<span id="q-win-prog">0/1</span>)</p>
             <button id="q-win-btn" class="claim-btn" onclick="claimDaily('win')">حصول</button>
         </div>
+        <div class="quest-item">
+            <h4>مهمة الوحش</h4>
+            <p>حقق 3 انتصارات إجمالية (+100 جولد) (<span id="q-boss-prog">0/3</span>)</p>
+            <button id="q-boss-btn" class="claim-btn" onclick="claimDaily('boss')">حصول</button>
+        </div>
     </div>
 </div>
 
@@ -262,7 +241,7 @@
     <div id="chat-messages"></div>
     <div id="chat-input-area">
         <input type="text" id="chat-input" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendChat()">
-        <button id="chat-send-btn" onclick="sendChat()">🚀</button>
+        <button onclick="sendChat()" style="background:var(--main); border:none; border-radius:10px; padding:10px; cursor:pointer; font-weight:bold;">🚀</button>
     </div>
 </div>
 
@@ -378,14 +357,20 @@
         const quests = [
             { id: 'login', done: user.lastLogin === today, claimed: user.lastLoginClaim === today },
             { id: 'chat', done: user.lastChatDay === today, claimed: user.lastChatClaim === today },
-            { id: 'win', done: user.tempWin === true, claimed: user.lastWinClaim === today }
+            { id: 'win', done: user.tempWin === true, claimed: user.lastWinClaim === today },
+            { id: 'boss', done: (user.totalWins || 0) >= 3, claimed: user.lastBossClaim === today } // مهمة الوحش الجديدة في الصندوق
         ];
 
         let readyCount = 0;
         quests.forEach(q => {
             const btn = document.getElementById(`q-${q.id}-btn`);
             const prog = document.getElementById(`q-${q.id}-prog`);
-            if (prog) prog.innerText = q.done ? "1/1" : "0/1";
+            
+            if (q.id === 'boss') {
+                if (prog) prog.innerText = `${Math.min(user.totalWins || 0, 3)}/3`;
+            } else {
+                if (prog) prog.innerText = q.done ? "1/1" : "0/1";
+            }
 
             if (q.claimed) {
                 btn.innerText = "تم الاستلام"; btn.className = "claim-btn claimed"; btn.disabled = true;
@@ -412,6 +397,8 @@
                 user.gold = (user.gold || 0) + 20; user.lastChatClaim = today;
             } else if (type === 'win' && user.tempWin === true && user.lastWinClaim !== today) {
                 user.gold = (user.gold || 0) + 50; user.lastWinClaim = today; user.tempWin = false;
+            } else if (type === 'boss' && (user.totalWins || 0) >= 3 && user.lastBossClaim !== today) {
+                user.gold = (user.gold || 0) + 100; user.lastBossClaim = today;
             }
             return user;
         }, (err, comm) => { if(comm) showBigMsg("تم استلام الجائزة! 💰"); });
@@ -426,8 +413,7 @@
             if (type === 'win') {
                 user.gold = (user.gold || 0) + 50;
                 user.totalWins = (user.totalWins || 0) + 1;
-                user.tempWin = true; // علامة لمهمة الفوز اليومية
-                if (user.totalWins % 3 === 0) user.gold += 100;
+                user.tempWin = true; 
             }
             else if (type === 'draw') user.points = (user.points || 0) + 10;
             return user;
@@ -435,7 +421,6 @@
             if(commit) {
                 const data = snap.val();
                 let msg = type === 'win' ? "مبروك! +50 جولد 💰" : "تعادل! +10 نقاط ⭐";
-                if (type === 'win' && data.totalWins % 3 === 0) msg += "\n+ مهمة الوحوش: +100 جولد! 🎁";
                 showBigMsg(msg);
             }
         });
@@ -712,7 +697,7 @@
         });
     }
 
-    function tapWar(e) {
+    function tapWar(event) {
         if(myRole==='viewer' || !canAction) return;
         rRef.child('war').transaction(d => {
             if(!d) d = {p1:50, p2:50, status:'playing'};
