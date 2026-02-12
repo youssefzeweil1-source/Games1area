@@ -19,16 +19,25 @@
             font-weight: 900; box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
         }
 
-        /* الجزء المطلوب تعديله للخلفية البانورامية */
+        /* التعديل المطلوب للخلفية البانورامية */
         .bg-panoramic {
-            position: fixed; top: 0; left: 0; width: 400%; height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%; /* تقليل العرض ليتناسب مع الحركة */
+            height: 100%;
             background: url('https://raw.githubusercontent.com/youssefweil1-source/Games1area/main/bg.png') repeat-x;
-            background-size: contain; z-index: -1;
-            animation: moveBg 60s linear infinite alternate;
+            background-size: cover; /* جعل الصورة تغطي المساحة بالكامل */
+            background-position: center;
+            z-index: -1;
+            animation: moveBg 30s linear infinite alternate; /* تسريع الحركة قليلاً لتناسب الأبعاد الجديدة */
             filter: brightness(0.3);
             will-change: transform;
         }
-        @keyframes moveBg { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes moveBg { 
+            from { transform: translateX(0); } 
+            to { transform: translateX(-50%); } 
+        }
 
         #music-modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
