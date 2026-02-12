@@ -295,12 +295,54 @@
         if (!uRef || rewardClaimed) return;
         rewardClaimed = true; 
         uRef.transaction(user => {
-            if (!user) user = { gold: 0, points: 0, skills: {} };
-            if (type === 'win') user.gold = (user.gold || 0) + 50;
+            if (!user) user = { gold: 0, points: 0, skills: {}, totalWins: 0 };
+            if (type === 'win') {
+                user.gold = (user.gold || 0) + 50;
+                user.totalWins = (user.totalWins || 0) + 1;
+                // مهمة الـ 3 مباريات = 100 جولد
+                if (user.totalWins % 3 === 0) user.gold += 100;
+            }
             else if (type === 'draw') user.points = (user.points || 0) + 10;
             return user;
         }, (err, commit, snap) => {
-            if(commit) showBigMsg(type === 'win' ? "مبروك! +50 جولد 💰" : "تعادل! +10 نقاط ⭐");
+            if(commit) {
+                const data = snap.val();
+                let msg = type === 'win' ? "مبروك! +50 جولد 💰" : "تعادل! +10 نقاط ⭐";
+                if (type === 'win' && data.totalWins % 3 === 0) msg += "\n+ مهمة الوحوش: +100 جولد! 🎁";
+                showBigMsg(msg);
+            }
+        });
+    }
+
+    function checkDailyLogin() {
+        const today = new Date().toDateString();
+        uRef.transaction(user => {
+            if (user) {
+                if (user.lastLogin !== today) {
+                    user.gold = (user.gold || 0) + 40;
+                    user.lastLogin = today;
+                    return user;
+                }
+            }
+            return;
+        }, (err, comm, snap) => {
+            if (comm) showBigMsg("هدية تسجيل دخول يومي! +40 جولد 💰");
+        });
+    }
+
+    function checkDailyChat() {
+        const today = new Date().toDateString();
+        uRef.transaction(user => {
+            if (user) {
+                if (user.lastChatDay !== today) {
+                    user.gold = (user.gold || 0) + 20;
+                    user.lastChatDay = today;
+                    return user;
+                }
+            }
+            return;
+        }, (err, comm, snap) => {
+            if (comm) showBigMsg("أول رسالة اليوم! +20 جولد ✉️");
         });
     }
 
@@ -308,6 +350,24 @@
         if(!canAction) return;
         uRef.child('skills').transaction(skills => {
             if (skills && skills[skillId] > 0) {
+                // تفعيل الاستيكة في XO
+                if (skillId === 'erase') {
+                    rRef.child('xo').once('value', xoSnap => {
+                        let d = xoSnap.val();
+                        if (d && d.b && !d.win) {
+                            let opSym = (myRole === 'p1' ? 'O' : 'X');
+                            let lastIdx = d.b.lastIndexOf(opSym);
+                            if (lastIdx !== -1) {
+                                d.b[lastIdx] = "";
+                                d.turn = myRole; 
+                                rRef.child('xo').set(d);
+                            } else {
+                                showBigMsg("لا يوجد شيء لمسحه!");
+                                return;
+                            }
+                        }
+                    });
+                }
                 skills[skillId] -= 1;
                 rRef.child('active_skill').set({ type: skillId, by: myRole, time: Date.now() });
                 return skills;
@@ -326,6 +386,7 @@
         const inp = document.getElementById('chat-input');
         if(!inp.value.trim() || !rRef) return;
         rRef.child('chat').push({ sender: myRole, text: inp.value.trim() });
+        checkDailyChat(); 
         inp.value = "";
     }
 
@@ -337,6 +398,8 @@
         
         rRef = db.ref(`final_arena_v4/${rID}`);
         uRef = db.ref(`users/${mID}`);
+
+        checkDailyLogin(); 
 
         uRef.on('value', snap => {
             const data = snap.val() || { gold: 0, points: 0, skills: {} };
