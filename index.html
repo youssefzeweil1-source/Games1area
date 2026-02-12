@@ -68,7 +68,7 @@
         .tabs { display: flex; width: 100%; background: rgba(17, 17, 17, 0.8); padding: 5px; gap: 5px; border-bottom: 2px solid #222; position: fixed; top: 0; }
 
         #war-container { width: 100vw; height: 100vh; margin: 0; border: none; border-radius: 0; overflow: hidden; display: flex; flex-direction: column; }
-        .war-half { transition: height 0.05s linear; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 2.5rem; text-shadow: 0 0 15px rgba(0,0,0,0.7); }
+        .war-half { transition: height 0.1s ease-out; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 2.5rem; text-shadow: 0 0 15px rgba(0,0,0,0.7); width: 100%; overflow: hidden; }
 
         #bomb-circle { width: 180px; height: 180px; border-radius: 50%; border: 10px solid var(--danger); margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; box-shadow: 0 0 40px var(--danger); background: rgba(0,0,0,0.6); }
         .num-btn { background: #222; border: 1px solid #444; color: white; padding: 20px 30px; border-radius: 15px; font-size: 2rem; margin: 10px; }
@@ -249,6 +249,16 @@
     <button onclick="clearRoom()" style="position: fixed; bottom: 10px; background:none; border:none; color:#555; text-decoration:underline; font-size: 0.7rem;">سوفت وير 🔄</button>
 </div>
 
+<div id="rematch-modal" class="hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); padding: 30px; border-radius: 25px; border: 3px solid var(--shaieb); z-index: 200000; width: 80%; max-width: 400px; box-shadow: 0 0 100px rgba(255, 204, 0, 0.4);">
+    <h2 id="rematch-title" style="color: var(--shaieb); margin-bottom: 10px;">انتهت الملحمة!</h2>
+    <p id="rematch-status" style="color: #ccc;">هل تريد الانتقام في جولة أخرى؟</p>
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+        <button id="rematch-yes" class="btn-main" onclick="voteRematch(true)" style="flex: 1; padding: 12px;">بقاء ⚔️</button>
+        <button id="rematch-no" class="btn-main" onclick="voteRematch(false)" style="flex: 1; padding: 12px; background: var(--danger);">انسحاب 🚪</button>
+    </div>
+    <div id="rematch-votes-display" style="margin-top: 15px; font-size: 0.9rem; color: var(--main);"></div>
+</div>
+
 <script>
     const firebaseConfig = { databaseURL: "https://zeweil-chat-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
@@ -338,18 +348,18 @@
 
     function resetToLobby() {
         if(myRole !== 'p1') return;
-        rRef.update({ gameState: 'readying', ready: null, votes: null, activeTab: 'war', war: {p1:50, p2:50, status:'playing'}, bomb: null, sh: null, xo: null, ludo: null });
+        rRef.update({ gameState: 'readying', ready: null, votes: null, activeTab: 'war', war: {p1:50, p2:50, status:'playing'}, bomb: null, sh: null, xo: null, ludo: null, rematch: null });
     }
 
     function handleGameOver(msg) {
         showBigMsg(msg);
+        canAction = false;
         setTimeout(() => {
-            document.getElementById('game-ui').classList.add('hidden');
-            document.getElementById('ready-btn').classList.remove('hidden');
-            document.getElementById('lobby').classList.remove('hidden');
-            document.querySelectorAll('.vote-card').forEach(el => el.classList.remove('selected'));
-            resetToLobby();
-        }, 3000);
+            document.getElementById('rematch-modal').classList.remove('hidden');
+            document.getElementById('rematch-votes-display').innerText = "في انتظار قرار الخصم...";
+            document.getElementById('rematch-yes').disabled = false;
+            document.getElementById('rematch-yes').style.opacity = "1";
+        }, 2000);
     }
 
     function listenLobby() {
@@ -399,6 +409,43 @@
                 showCenterNotif();
             }
         });
+
+        rRef.child('rematch').on('value', snap => {
+            const v = snap.val() || {};
+            const disp = document.getElementById('rematch-votes-display');
+            if (v.p1 && v.p2) {
+                showBigMsg("جولة جديدة تبدأ الآن! 🔥");
+                setTimeout(() => {
+                    document.getElementById('rematch-modal').classList.add('hidden');
+                    resetCurrentGame();
+                }, 1500);
+            } else if (v.p1 || v.p2) {
+                disp.innerText = "أحد اللاعبين جاهز للانتقام...";
+            }
+        });
+    }
+
+    function voteRematch(stay) {
+        if (myRole === 'viewer') return;
+        if (!stay) { rRef.child('rematch').remove(); location.reload(); return; }
+        rRef.child(`rematch/${myRole}`).set(true);
+        document.getElementById('rematch-yes').disabled = true;
+        document.getElementById('rematch-yes').style.opacity = "0.5";
+    }
+
+    function resetCurrentGame() {
+        canAction = true;
+        if (myRole !== 'p1') return;
+        rRef.child('activeTab').once('value', s => {
+            const game = s.val();
+            const up = { rematch: null, gameState: 'playing' };
+            if (game === 'war') up.war = {p1:50, p2:50, status:'playing'};
+            if (game === 'bomb') up.bomb = {val:0, limit: Math.floor(Math.random()*20)+40, turn:'p1', status:'playing'};
+            if (game === 'xo') up.xo = { b: Array(9).fill(""), turn: "p1" };
+            if (game === 'sh') rRef.child('sh').remove();
+            if (game === 'ludo') up.ludo = { turn: 'p1', p1Pos: -1, p2Pos: -1 };
+            rRef.update(up);
+        });
     }
 
     function vote(game) {
@@ -420,13 +467,16 @@
         });
 
         rRef.child('war').on('value', s => {
-            const d = s.val() || {p1:50, p2:50, status:'playing'};
-            if(d.status === 'done') return;
+            const d = s.val();
+            if(!d) return;
             const myH = (myRole==='p1'?d.p1:d.p2);
             document.getElementById('my-war').style.height = myH + "%";
             document.getElementById('op-war').style.height = (100-myH) + "%";
-            if(myH >= 100) { rRef.child('war/status').set('done'); handleGameOver(getRandom(wins)); }
-            else if (myH <= 0) { rRef.child('war/status').set('done'); handleGameOver(getRandom(insults)); }
+            
+            if(d.status === 'done' && !document.getElementById('rematch-modal').classList.contains('open')) {
+                canAction = false;
+                handleGameOver(d.winner === myRole ? getRandom(wins) : getRandom(insults));
+            }
         });
 
         rRef.child('bomb').on('value', s => {
@@ -458,14 +508,16 @@
     }
 
     function tapWar(e) {
-        if(myRole==='viewer') return;
+        if(myRole==='viewer' || !canAction) return;
         rRef.child('war').transaction(d => {
             if(!d) d = {p1:50, p2:50, status:'playing'};
-            if(d.status === 'done') return d;
+            if(d.status !== 'playing') return d;
             if(myRole==='p1') { d.p1 += 2; d.p2 -= 2; } else { d.p2 += 2; d.p1 -= 2; }
-            if(d.p1 >= 100) { d.p1 = 100; d.p2 = 0; d.status = 'done'; }
-            if(d.p2 >= 100) { d.p2 = 100; d.p1 = 0; d.status = 'done'; }
+            if(d.p1 >= 100) { d.p1 = 100; d.p2 = 0; d.status = 'done'; d.winner = 'p1'; }
+            if(d.p2 >= 100) { d.p2 = 100; d.p1 = 0; d.status = 'done'; d.winner = 'p2'; }
             return d;
+        }, (err, comm, snap) => {
+            if(comm && snap.val().status === 'done') canAction = false;
         });
     }
 
