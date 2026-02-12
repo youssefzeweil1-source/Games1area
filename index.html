@@ -299,7 +299,6 @@
             if (type === 'win') {
                 user.gold = (user.gold || 0) + 50;
                 user.totalWins = (user.totalWins || 0) + 1;
-                // مهمة الـ 3 مباريات = 100 جولد
                 if (user.totalWins % 3 === 0) user.gold += 100;
             }
             else if (type === 'draw') user.points = (user.points || 0) + 10;
@@ -350,7 +349,6 @@
         if(!canAction) return;
         uRef.child('skills').transaction(skills => {
             if (skills && skills[skillId] > 0) {
-                // تفعيل الاستيكة في XO
                 if (skillId === 'erase') {
                     rRef.child('xo').once('value', xoSnap => {
                         let d = xoSnap.val();
@@ -358,13 +356,9 @@
                             let opSym = (myRole === 'p1' ? 'O' : 'X');
                             let lastIdx = d.b.lastIndexOf(opSym);
                             if (lastIdx !== -1) {
-                                d.b[lastIdx] = "";
-                                d.turn = myRole; 
+                                d.b[lastIdx] = ""; d.turn = myRole; 
                                 rRef.child('xo').set(d);
-                            } else {
-                                showBigMsg("لا يوجد شيء لمسحه!");
-                                return;
-                            }
+                            } else { showBigMsg("لا يوجد شيء لمسحه!"); return; }
                         }
                     });
                 }
@@ -386,8 +380,7 @@
         const inp = document.getElementById('chat-input');
         if(!inp.value.trim() || !rRef) return;
         rRef.child('chat').push({ sender: myRole, text: inp.value.trim() });
-        checkDailyChat(); 
-        inp.value = "";
+        checkDailyChat(); inp.value = "";
     }
 
     function joinRoom() {
@@ -399,8 +392,35 @@
         rRef = db.ref(`final_arena_v4/${rID}`);
         uRef = db.ref(`users/${mID}`);
 
-        checkDailyLogin(); 
+        checkDailyLogin();
 
+        rRef.child('slots').transaction(s => {
+            if(!s) return { p1: mID };
+            if(s.p1 === mID || s.p2 === mID) return s;
+            if(!s.p2) return { p1: s.p1, p2: mID };
+            return s;
+        }, (err, comm, snap) => {
+            const s = snap.val() || {};
+            if (s.p1 !== mID && s.p2 !== mID && s.p1 && s.p2) { alert("الغرفة كاملة!"); return; }
+            
+            myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
+            
+            if(myRole !== "viewer") {
+                // تصفير الغرفة بالكامل عند الخروج (المتصل يطرد تلقائياً)
+                rRef.onDisconnect().remove(); 
+            }
+
+            document.getElementById('music-btn').classList.remove('hidden');
+            document.getElementById('store-btn').classList.remove('hidden');
+            document.getElementById('player-stats-bar').classList.remove('hidden');
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('lobby').classList.remove('hidden');
+            listenStats();
+            listenLobby();
+        });
+    }
+
+    function listenStats() {
         uRef.on('value', snap => {
             const data = snap.val() || { gold: 0, points: 0, skills: {} };
             document.getElementById('my-gold-display').innerText = data.gold || 0;
@@ -416,26 +436,6 @@
                     else btn.classList.add('hidden');
                 }
             });
-        });
-
-        rRef.child('slots').transaction(s => {
-            if(!s) return { p1: mID };
-            if(s.p1 === mID || s.p2 === mID) return s;
-            if(!s.p2) return { p1: s.p1, p2: mID };
-            return s;
-        }, (err, comm, snap) => {
-            const s = snap.val() || {};
-            myRole = (s.p1 === mID) ? "p1" : (s.p2 === mID ? "p2" : "viewer");
-            if(myRole !== "viewer") {
-                rRef.child(`slots/${myRole}`).onDisconnect().remove();
-                rRef.child(`ready/${myRole}`).onDisconnect().remove();
-            }
-            document.getElementById('music-btn').classList.remove('hidden');
-            document.getElementById('store-btn').classList.remove('hidden');
-            document.getElementById('player-stats-bar').classList.remove('hidden');
-            document.getElementById('setup').classList.add('hidden');
-            document.getElementById('lobby').classList.remove('hidden');
-            listenLobby();
         });
     }
 
@@ -456,7 +456,10 @@
 
     function listenLobby() {
         rRef.on('value', snap => {
-            const d = snap.val() || {};
+            const d = snap.val();
+            // إذا تم مسح الغرفة (بسبب خروج الخصم) ارجع للرئيسية
+            if (!d && myRole !== "viewer") { location.reload(); return; }
+            
             const slots = d.slots || {};
             const ready = d.ready || {};
             const votes = d.votes || {};
@@ -486,15 +489,25 @@
             }
         });
 
+        // مراقبة المهارات (الإشعارات)
         rRef.child('active_skill').on('value', snap => {
             const skill = snap.val();
-            if (!skill || skill.by === myRole) return;
+            if (!skill) return;
+            if (skill.by === myRole) return; // لا تظهر إشعار لنفسك
+
+            const skillNames = {'freeze':'تجميد ❄️', 'spy':'تجسس 👁️', 'skip':'تخطي 🏃‍♂️', 'erase':'ممحاة 🧽'};
+            showBigMsg(`الخصم استخدم مهارة: ${skillNames[skill.type]}`);
+
             if (skill.type === 'freeze') {
-                canAction = false; showBigMsg("الخصم جمد أعصابك! ❄️");
+                canAction = false;
                 document.body.style.filter = "blur(4px) grayscale(1)";
                 setTimeout(() => { canAction = true; document.body.style.filter = ""; }, 3000);
             }
-            if (myRole === 'p1') setTimeout(() => rRef.child('active_skill').remove(), 3200);
+
+            // مسح المهارة بعد وقت قصير لتنتهي العملية
+            if (myRole === 'p1') {
+                setTimeout(() => rRef.child('active_skill').remove(), 2000);
+            }
         });
 
         rRef.child('chat').limitToLast(1).on('child_added', snap => {
