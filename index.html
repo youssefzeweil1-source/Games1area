@@ -19,12 +19,14 @@
             font-weight: 900; box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
         }
 
+        /* الجزء المطلوب تعديله للخلفية البانورامية */
         .bg-panoramic {
             position: fixed; top: 0; left: 0; width: 400%; height: 100%;
             background: url('https://raw.githubusercontent.com/youssefweil1-source/Games1area/main/bg.png') repeat-x;
             background-size: contain; z-index: -1;
             animation: moveBg 60s linear infinite alternate;
             filter: brightness(0.3);
+            will-change: transform;
         }
         @keyframes moveBg { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
@@ -119,7 +121,6 @@
         .hidden { display: none !important; }
         .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px 40px; border-radius: 25px; font-weight: 900; font-size: 1.4rem; z-index: 100005; text-align: center; border: 5px solid var(--main); line-height: 1.4; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
 
-        /* تعديلات القوائم (شات ومهام) */
         .side-container { 
             position: fixed; bottom: 85px; left: 15px; width: 300px; height: 420px; 
             background: rgba(0,0,0,0.92); border: 2.5px solid var(--main); border-radius: 25px; 
@@ -143,14 +144,12 @@
         
         .side-toggle { position: fixed; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2001; cursor: pointer; transition: 0.3s; font-size: 1.8rem; }
         
-        /* تم تعديل المواقع هنا لمنع التداخل */
         #chat-toggle { bottom: 20px; left: 20px; background: var(--main); box-shadow: 0 0 20px rgba(0,255,0,0.4); }
         #quest-toggle { bottom: 20px; left: 90px; background: var(--shaieb); box-shadow: 0 0 20px rgba(255,204,0,0.4); }
         
         .side-toggle.new-msg { background: #ffcc00; animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        /* ستايل المهام */
         .quest-item { background: #111; border: 1px solid #333; margin: 10px; padding: 15px; border-radius: 15px; text-align: right; }
         .quest-item h4 { margin: 0; color: var(--shaieb); font-size: 0.9rem; }
         .quest-item p { margin: 5px 0; font-size: 0.8rem; color: #ccc; }
@@ -343,7 +342,6 @@
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-    // --- نظام المهام المطور ---
     function toggleSidePanel(id) {
         const target = document.getElementById(id);
         const isOpen = target.classList.contains('open');
@@ -358,7 +356,7 @@
             { id: 'login', done: user.lastLogin === today, claimed: user.lastLoginClaim === today },
             { id: 'chat', done: user.lastChatDay === today, claimed: user.lastChatClaim === today },
             { id: 'win', done: user.tempWin === true, claimed: user.lastWinClaim === today },
-            { id: 'boss', done: (user.totalWins || 0) >= 3, claimed: user.lastBossClaim === today } // مهمة الوحش الجديدة في الصندوق
+            { id: 'boss', done: (user.totalWins || 0) >= 3, claimed: user.lastBossClaim === today }
         ];
 
         let readyCount = 0;
@@ -403,7 +401,6 @@
             return user;
         }, (err, comm) => { if(comm) showBigMsg("تم استلام الجائزة! 💰"); });
     }
-    // --- نهاية نظام المهام ---
 
     function giveReward(type) {
         if (!uRef || rewardClaimed) return;
