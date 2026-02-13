@@ -32,7 +32,6 @@
             font-weight: 900; box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
         }
 
-        /* التعديل المصلح للخلفية البانورامية */
         .bg-panoramic {
             position: fixed;
             top: 0;
@@ -428,18 +427,45 @@
         rewardClaimed = true; 
         uRef.transaction(user => {
             if (!user) user = { gold: 0, points: 0, skills: {}, totalWins: 0 };
+            
             if (type === 'win') {
                 user.gold = (user.gold || 0) + 50;
                 user.totalWins = (user.totalWins || 0) + 1;
                 user.tempWin = true; 
+            } else if (type === 'draw') {
+                // إضافة نقاط التعادل (⭐)
+                user.points = (user.points || 0) + 10;
+                
+                // ميكانيكا صندوق الهدايا (Loot Box) مع الاحتمالات
+                let rand = Math.random() * 100;
+                let prizeMsg = "";
+                if (!user.skills) user.skills = {};
+
+                if (rand < 50) { 
+                    user.gold = (user.gold || 0) + 100;
+                    prizeMsg = "لقيت 100 جولد في الصندوق! 💰";
+                } else if (rand < 70) { 
+                    let s = Math.random() > 0.5 ? 'spy' : 'erase';
+                    user.skills[s] = (user.skills[s] || 0) + 1;
+                    prizeMsg = `لقيت مهارة ${s === 'spy' ? 'الرادار 👁️' : 'الممحاة 🧽'}!`;
+                } else if (rand < 90) { 
+                    user.skills['skip'] = (user.skills['skip'] || 0) + 1;
+                    prizeMsg = "لقيت مهارة الهروب السريع! 🏃‍♂️";
+                } else { 
+                    user.skills['freeze'] = (user.skills['freeze'] || 0) + 1;
+                    prizeMsg = "يا بختك! لـقـيـت مهارة التجميد ❄️🔥";
+                }
+                user.lastPrizeMsg = "🎁 الصندوق: " + prizeMsg;
             }
-            else if (type === 'draw') user.points = (user.points || 0) + 10;
             return user;
         }, (err, commit, snap) => {
             if(commit) {
                 const data = snap.val();
-                let msg = type === 'win' ? "مبروك! +50 جولد 💰" : "تعادل! +10 نقاط ⭐";
-                showBigMsg(msg);
+                if (type === 'win') {
+                    showBigMsg("فوز مستحق! +50 جولد 💰");
+                } else if (type === 'draw') {
+                    showBigMsg(data.lastPrizeMsg || "تعادل! +10 نقاط ⭐");
+                }
             }
         });
     }
