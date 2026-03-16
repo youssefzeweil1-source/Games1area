@@ -99,6 +99,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const namesDirectoryPath = "players_names";
 
     function controlGame(status) {
         const selectedGame = document.getElementById('game-selector').value;
@@ -126,12 +127,20 @@
     function loadAllPlayers() {
         const list = document.getElementById('players-list');
         list.innerHTML = '<p style="color:#777">جاري التحميل...</p>';
-        db.ref('users').once('value').then(snap => {
-            const users = snap.val() || {};
-            const rows = Object.entries(users).map(([id, u]) => {
-                const name = (u && u.name) ? u.name : 'بدون اسم';
-                const points = (u && u.points) ? u.points : 0;
-                const gold = (u && u.gold) ? u.gold : 0;
+
+        Promise.all([
+            db.ref('users').once('value'),
+            db.ref(namesDirectoryPath).once('value')
+        ]).then(([usersSnap, namesSnap]) => {
+            const users = usersSnap.val() || {};
+            const names = namesSnap.val() || {};
+            const ids = Array.from(new Set([...Object.keys(users), ...Object.keys(names)]));
+
+            const rows = ids.map(id => {
+                const u = users[id] || {};
+                const name = (names[id] && names[id].name) ? names[id].name : 'بدون اسم';
+                const points = u.points || 0;
+                const gold = u.gold || 0;
                 return `
                     <div class="player-row">
                         <div class="player-top">
@@ -145,6 +154,7 @@
                     </div>
                 `;
             }).join('');
+
             list.innerHTML = rows || '<p style="color:#777">لا يوجد لاعبين حالياً.</p>';
         }).catch(err => {
             list.innerHTML = `<p style="color:#f66">${err.message}</p>`;

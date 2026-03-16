@@ -428,10 +428,11 @@
     const firebaseConfig = { databaseURL: "https://zeweil-chat-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const namesDirectoryPath = "players_names";
 
     const messageSound = new Audio('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/mixkit-software-interface-start-2574.wav');
 
-    let rID, mID, rRef, uRef, myRole = "", canAction = true, rewardClaimed = false, listenersStarted = false, ludoBoardDrawn = false;
+    let rID, mID, rRef, uRef, nRef, myRole = "", canAction = true, rewardClaimed = false, listenersStarted = false, ludoBoardDrawn = false;
     let selectedLudoColor = null, ludoColorPromptShown = false;
     let playerName = localStorage.getItem('arena_name') || "";
     let forceRename = false;
@@ -732,24 +733,28 @@
             if (!user) return user;
             if ((user.gold || 0) < 1000) return user;
             user.gold -= 1000;
-            user.name = newName;
             return user;
         }, (err, committed, snap) => {
-            if (!committed || !snap || !snap.val() || snap.val().name !== newName) {
+            if (!committed) {
                 alert('لا يوجد جولد كافي لتغيير الاسم (مطلوب 1000)');
                 return;
             }
             playerName = newName;
             localStorage.setItem('arena_name', playerName);
             renderSetupName();
+            syncNameToProfile();
             document.getElementById('name-modal').classList.add('hidden');
             showBigMsg('تم تغيير الاسم مقابل 1000 جولد ✅');
         });
     }
 
     function syncNameToProfile() {
-        if (!uRef || !playerName) return;
-        uRef.child('name').set(playerName);
+        if (!mID || !playerName) return;
+        if (!nRef) nRef = db.ref(`${namesDirectoryPath}/${mID}`);
+        nRef.set({
+            name: playerName,
+            updatedAt: Date.now()
+        });
     }
 
     function updateLobbyNames(slots) {
@@ -757,8 +762,8 @@
         const p2El = document.getElementById('p2-name');
         p1El.innerText = 'لاعب 1';
         p2El.innerText = 'لاعب 2';
-        if (slots.p1) db.ref(`users/${slots.p1}/name`).once('value', s => { p1El.innerText = s.val() || 'لاعب 1'; });
-        if (slots.p2) db.ref(`users/${slots.p2}/name`).once('value', s => { p2El.innerText = s.val() || 'لاعب 2'; });
+        if (slots.p1) db.ref(`${namesDirectoryPath}/${slots.p1}/name`).once('value', s => { p1El.innerText = s.val() || 'لاعب 1'; });
+        if (slots.p2) db.ref(`${namesDirectoryPath}/${slots.p2}/name`).once('value', s => { p2El.innerText = s.val() || 'لاعب 2'; });
     }
 
     function joinRoom() {
@@ -770,6 +775,7 @@
         
         rRef = db.ref(`final_arena_v4/${rID}`);
         uRef = db.ref(`users/${mID}`);
+        nRef = db.ref(`${namesDirectoryPath}/${mID}`);
 
         checkDailyLogin();
 
@@ -807,8 +813,7 @@
 
     function listenStats() {
         uRef.on('value', snap => {
-            const data = snap.val() || { gold: 0, points: 0, skills: {}, name: playerName };
-            if (data.name) { playerName = data.name; localStorage.setItem('arena_name', playerName); renderSetupName(); }
+            const data = snap.val() || { gold: 0, points: 0, skills: {} };
             document.getElementById('my-gold-display').innerText = data.gold || 0;
             document.getElementById('my-points-display').innerText = data.points || 0;
             
@@ -826,6 +831,17 @@
                 }
             });
         });
+
+        if (nRef) {
+            nRef.child('name').on('value', snap => {
+                const n = (snap.val() || '').toString().trim();
+                if (n) {
+                    playerName = n;
+                    localStorage.setItem('arena_name', playerName);
+                    renderSetupName();
+                }
+            });
+        }
     }
 
     function iamReady() {
