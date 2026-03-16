@@ -19,8 +19,11 @@
     .wheel { width:290px; height:290px; margin:10px auto; border-radius:50%; border:8px solid var(--gold); position:relative; overflow:hidden; transition: transform 4s cubic-bezier(.17,.67,.12,.99); background:#222; }
     .pointer { width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--gold); margin:0 auto 8px; }
     .seglabel { position:absolute; left:50%; top:50%; transform-origin:0 0; font-size:.8rem; font-weight:900; color:#fff; text-shadow:0 1px 2px #000; background:rgba(0,0,0,.35); padding:2px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.25);} 
-    .prizes { display:none; }
-    .prize-row { display:flex; justify-content:space-between; border-bottom:1px dashed #333; padding:6px 0; }
+    .prizes { text-align:right; margin-top:10px; font-size:.9rem; background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:8px; }
+    .prize-row { display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; border-bottom:1px dashed #333; padding:8px 0; }
+    .swatch { width:14px; height:14px; border-radius:4px; display:inline-block; border:1px solid rgba(255,255,255,.4); }
+    .prize-txt { display:flex; gap:6px; align-items:center; }
+    .prob { color:var(--gold); font-weight:900; }
     .spin-btn { background:var(--gold); color:#000; border:none; border-radius:10px; padding:10px 16px; font-weight:900; cursor:pointer; }
     .spin-btn:disabled { opacity:.5; cursor:not-allowed; }
     .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#fff; color:#000; padding:12px 20px; border-radius:999px; border:2px solid var(--gold); display:none; z-index:9999; }
@@ -39,7 +42,7 @@
   <div class="wrap">
     <section class="card">
       <h2>قسم أبطال لودو (لفة مجانية)</h2>
-      <p style="color:#aaa">الإيموجي داخل العجلة يوضح الجائزة + نسبة الفوز %.</p>
+      <p style="color:#aaa">الجائزة داخل العجلة + قائمة احتمالات مفصلة بالألوان.</p>
       <div class="pointer"></div>
       <div id="wheel-free" class="wheel"></div>
       <button id="spin-free-btn" class="spin-btn" onclick="spin('free')">لف مجانًا 🎯</button>
@@ -48,7 +51,7 @@
 
     <section class="card">
       <h2>قسم النخبة (250 جولد)</h2>
-      <p style="color:#aaa">إيموجي + نسبة % داخل القطاعات مباشرة.</p>
+      <p style="color:#aaa">جوائز قوية مع قائمة احتمالات تفصيلية بنفس ألوان العجلة.</p>
       <div class="pointer"></div>
       <div id="wheel-paid" class="wheel"></div>
       <button id="spin-paid-btn" class="spin-btn" onclick="spin('paid')">لف بـ 250 جولد 💸</button>
@@ -115,7 +118,13 @@
 
     function renderList(elId, prizes) {
       const el = document.getElementById(elId);
-      el.innerHTML = prizes.map(p => `<div class="prize-row"><span>${p.label}</span><b>${p.chance}%</b></div>`).join('');
+      el.innerHTML = prizes.map(p => `
+        <div class="prize-row">
+          <span class="swatch" style="background:${p.color}"></span>
+          <span class="prize-txt">${p.icon || '🎁'} <span>${p.label}</span></span>
+          <span class="prob">${p.chance}%</span>
+        </div>
+      `).join('');
     }
 
     function weightedPick(prizes){
@@ -190,6 +199,8 @@
 
     renderWheel('wheel-free', freePrizes);
     renderWheel('wheel-paid', paidPrizes);
+    renderList('free-list', freePrizes);
+    renderList('paid-list', paidPrizes);
   </script>
 </body>
 </html>
