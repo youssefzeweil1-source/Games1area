@@ -77,19 +77,19 @@
             box-shadow: 0 0 15px var(--main);
         }
 
-        #store-btn {
-            position: fixed; top: 15px; left: 15px; background: var(--gold);
-            color: black; border-radius: 10px; padding: 10px 15px;
-            font-weight: bold; cursor: pointer; z-index: 100000;
-            box-shadow: 0 0 15px var(--gold); border: none;
+        #top-left-actions {
+            position: fixed; top: 15px; left: 15px; z-index: 100000;
+            display: flex; gap: 10px; align-items: center;
         }
 
+        #store-btn {
+            background: var(--gold); color: black; border-radius: 10px; padding: 10px 15px;
+            font-weight: bold; cursor: pointer; box-shadow: 0 0 15px var(--gold); border: none;
+        }
 
         #spin-btn {
-            position: fixed; top: 15px; left: 120px; background: #ff7a00;
-            color: #000; border-radius: 10px; padding: 10px 15px;
-            font-weight: bold; cursor: pointer; z-index: 100000;
-            box-shadow: 0 0 15px #ff7a00; border: none;
+            background: #ff7a00; color: #000; border-radius: 10px; padding: 10px 15px;
+            font-weight: bold; cursor: pointer; box-shadow: 0 0 15px #ff7a00; border: none;
         }
 
         #skills-overlay {
@@ -226,8 +226,10 @@
     <span style="color: #0af;">⭐ <span id="my-points-display">0</span></span>
 </div>
 
-<button id="store-btn" class="hidden" onclick="window.location.href='store.html'">🛒 المتجر</button>
-<button id="spin-btn" class="hidden" onclick="window.location.href='spin.html'">🎡 عجلة الحظ</button>
+<div id="top-left-actions">
+    <button id="store-btn" class="hidden" onclick="window.location.href='store.html'">🛒 المتجر</button>
+    <button id="spin-btn" class="hidden" onclick="window.location.href='spin.html'">🎡 عجلة الحظ</button>
+</div>
 <div id="music-btn" class="hidden" onclick="toggleMusicModal()">الموسيقى 🎵</div>
 <button id="bg-motion-btn" onclick="toggleBackgroundMotion()">⏸️ الخلفية</button>
 
