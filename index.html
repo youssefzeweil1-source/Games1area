@@ -282,10 +282,6 @@
     <h1 style="color:var(--main); font-size: 3.5rem; margin:0; letter-spacing: -2px; text-shadow: 0 0 20px var(--main);">ARENA ⚡</h1>
     <p style="color:#bbb;">made by ZEWEIL!</p>
     <input type="text" id="room" placeholder="كود الغرفة" style="padding:15px; border-radius:15px; border:1px solid #333; background:rgba(0,0,0,0.7); color:white; width:200px; text-align:center;"><br><br>
-    <select id="ludo-color" style="padding:12px 14px; border-radius:12px; border:1px solid #333; background:#111; color:#fff; font-family:'Cairo';">
-        <option value="red">🎨 لون لودو المفضل: أحمر</option>
-        <option value="blue">🎨 لون لودو المفضل: أزرق</option>
-    </select><br><br>
     <button class="btn-main" onclick="joinRoom()">دخول الساحة</button>
 </div>
 
@@ -366,6 +362,19 @@
     <div id="rematch-votes-display" style="margin-top: 15px; font-size: 0.9rem; color: var(--main);"></div>
 </div>
 
+
+<div id="ludo-color-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 220000; display:flex; align-items:center; justify-content:center;">
+    <div style="background:#090909; border:2px solid var(--gold); border-radius:20px; padding:20px; width:min(92vw,360px); box-shadow:0 0 30px rgba(255,215,0,0.3);">
+        <h3 style="margin:0 0 8px; color:var(--gold);">اختيار لون لودو 🎨</h3>
+        <p style="margin:0 0 14px; color:#bbb; font-size:0.9rem;">اختار لونك بعد التصويت قبل بداية الجولة</p>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-main" onclick="setLudoColor('red')" style="flex:1; background:#ff2b4f; color:#fff;">🔴 أحمر</button>
+            <button class="btn-main" onclick="setLudoColor('blue')" style="flex:1; background:#2f6bff; color:#fff;">🔵 أزرق</button>
+        </div>
+        <p id="ludo-color-status" style="margin:12px 0 0; color:#888; font-size:0.8rem;">في انتظار اختيارك...</p>
+    </div>
+</div>
+
 <script>
     const firebaseConfig = { databaseURL: "https://zeweil-chat-default-rtdb.europe-west1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
@@ -374,7 +383,7 @@
     const messageSound = new Audio('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/mixkit-software-interface-start-2574.wav');
 
     let rID, mID, rRef, uRef, myRole = "", canAction = true, rewardClaimed = false, listenersStarted = false, ludoBoardDrawn = false;
-    let selectedLudoColor = "red";
+    let selectedLudoColor = null, ludoColorPromptShown = false;
     let bgAnimFrame = null, bgMotionPaused = false, bgX = 0, bgY = 0, bgVX = 0.6, bgVY = 0.03, bgSwitchAt = 0, bgLastTs = 0;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
     const gameNames = { 'war': 'السرعة ⚡', 'sh': 'الشايب 🤡', 'bomb': 'القنبلة 💣', 'xo': 'XO ⭕', 'ludo': 'لودو 🎲' };
@@ -382,6 +391,7 @@
     const ludoStartIdx = { p1: 0, p2: 26 };
     const ludoSafeCells = [0,8,13,21,26,34,39,47];
     const ludoColorsMap = { red: '#ff2b4f', blue: '#2f6bff' };
+    const ludoHomePath = { p1: [[7,1],[7,2],[7,3],[7,4],[7,5]], p2: [[7,13],[7,12],[7,11],[7,10],[7,9]] };
     const insults = ["😂جت الحزينه تفرح مالقتيلهاش مطررح 😅", "سرعة سلحفاة مشلولة 🐢", "العب بصباعك التاني يمكن تفلح 🤡", "شكلك وحش أوي قدام الخصم 💀", "أنا لو منك أرمي الموبايل 🚮", "جت فيك يا خايب! 💣", "الخصم داس عليك حرفياً 🦶", "إيه الضحك ده? 😂"];
     const wins = ["جلدته جلد! 🔥", "مستواك عالمي يا وحش 🦁", "الخصم بيعيط في الزاوية 😭", "إيه السيطرة دي يا ملك! 👑", "سهلة أوي..  اللي بعددددددددده 😎"];
 
@@ -614,7 +624,6 @@
     function joinRoom() {
         rID = document.getElementById('room').value.trim();
         if(!rID) return alert("دخل كود الغرفة!");
-        selectedLudoColor = (document.getElementById('ludo-color')?.value || 'red');
         mID = localStorage.getItem('arena_user_id') || ("U" + Math.floor(Math.random()*9999));
         localStorage.setItem('arena_user_id', mID);
         
@@ -641,7 +650,6 @@
                 rRef.child(`rematch/${myRole}`).onDisconnect().remove();
             }
 
-            assignLudoColor();
 
             document.getElementById('music-btn').classList.remove('hidden');
             document.getElementById('store-btn').classList.remove('hidden');
@@ -783,6 +791,8 @@
             ['war','sh','bomb','xo','ludo'].forEach(id => document.getElementById(id+'-ui').classList.add('hidden'));
             document.getElementById(t+'-ui').classList.remove('hidden');
             updateSkillsVisibility(t);
+            if (t === 'ludo') ensureLudoColorSelection();
+            else hideLudoColorModal();
         });
 
         rRef.child('war').on('value', s => {
@@ -828,8 +838,9 @@
             const myTurn = d.turn === myRole;
             const msg = d.winner ? (d.winner === myRole ? "فزت في لودو! 🏆" : "الخصم فاز في لودو") : (myTurn ? (d.phase === 'choose' ? "اختار البيدق اللي هيتحرك" : "دورك.. ارمي النرد! 🔥") : "الخصم بيلعب..");
             document.getElementById('ludo-stat').innerText = msg;
-            document.getElementById('dice-val').innerText = d.dice || '?';
+            document.getElementById('dice-val').innerText = (typeof d.dice === 'number') ? d.dice : '🎲';
             renderLudoState(d);
+            if (myRole !== 'viewer' && !d.colors?.[myRole]) ensureLudoColorSelection();
             renderPawnPicker(d);
             if (d.winner && d.status !== 'done') {
                 if (myRole === 'p1') rRef.child('ludo/status').set('done');
@@ -936,7 +947,7 @@
     function getDefaultLudoState() {
         return {
             turn: 'p1', phase: 'roll', dice: null, status: 'playing', winner: null,
-            colors: { p1: 'red', p2: 'blue' },
+            colors: { p1: null, p2: null },
             p1Pawns: [-1, -1, -1, -1],
             p2Pawns: [-1, -1, -1, -1]
         };
@@ -958,17 +969,49 @@
         return d;
     }
 
-    function assignLudoColor() {
+    function hideLudoColorModal() {
+        const m = document.getElementById('ludo-color-modal');
+        if (m) m.classList.add('hidden');
+    }
+
+    function ensureLudoColorSelection() {
+        if (!rRef || myRole === 'viewer' || ludoColorPromptShown) return;
+        rRef.child('ludo/colors').once('value', snap => {
+            const colors = snap.val() || {};
+            if (colors[myRole]) {
+                selectedLudoColor = colors[myRole];
+                hideLudoColorModal();
+                ludoColorPromptShown = true;
+                return;
+            }
+            const m = document.getElementById('ludo-color-modal');
+            const st = document.getElementById('ludo-color-status');
+            if (m) m.classList.remove('hidden');
+            if (st) st.innerText = 'اختار لونك علشان تبدأ لودو';
+        });
+    }
+
+    function setLudoColor(color) {
         if (!rRef || myRole === 'viewer') return;
+        if (!['red','blue'].includes(color)) return;
         rRef.child('ludo/colors').transaction(colors => {
             if (!colors) colors = { p1: null, p2: null };
             const otherRole = myRole === 'p1' ? 'p2' : 'p1';
             const otherColor = colors[otherRole];
-            let chosen = selectedLudoColor;
-            if (otherColor === chosen) chosen = chosen === 'red' ? 'blue' : 'red';
-            colors[myRole] = chosen;
-            if (!colors[otherRole]) colors[otherRole] = chosen === 'red' ? 'blue' : 'red';
+            if (otherColor === color) return colors;
+            colors[myRole] = color;
+            if (!colors[otherRole]) colors[otherRole] = color === 'red' ? 'blue' : 'red';
             return colors;
+        }, (err, committed, snap) => {
+            const st = document.getElementById('ludo-color-status');
+            const colors = snap && snap.val ? (snap.val() || {}) : {};
+            if (!committed || colors[myRole] !== color) {
+                if (st) st.innerText = 'اللون ده متاخد.. اختار اللون التاني';
+                return;
+            }
+            selectedLudoColor = color;
+            ludoColorPromptShown = true;
+            hideLudoColorModal();
         });
     }
 
@@ -990,8 +1033,18 @@
     }
 
     function getPawnGlobalCell(role, pawnSteps) {
-        if (pawnSteps < 0 || pawnSteps > 51) return null;
-        return getGlobalIndex(role, pawnSteps);
+        if (pawnSteps < 0) return null;
+        if (pawnSteps <= 51) {
+            const idx = getGlobalIndex(role, pawnSteps);
+            const c = globalPath[idx];
+            return c ? { r: c[0], c: c[1], key: `g-${idx}` } : null;
+        }
+        if (pawnSteps <= 56) {
+            const homeIdx = pawnSteps - 52;
+            const h = ludoHomePath[role][homeIdx] || [7,7];
+            return { r: h[0], c: h[1], key: `h-${role}-${homeIdx}` };
+        }
+        return null;
     }
 
     function renderLudoState(d) {
@@ -1001,17 +1054,16 @@
             const pawns = d[`${role}Pawns`] || [];
             pawns.forEach((steps, idx) => {
                 const g = getPawnGlobalCell(role, steps);
-                if (g === null) return;
-                placements[g] = placements[g] || [];
-                placements[g].push({ role, idx });
+                if (!g) return;
+                placements[g.key] = placements[g.key] || { pos: g, pawns: [] };
+                placements[g.key].pawns.push({ role, idx });
             });
         });
 
         Object.keys(placements).forEach(gKey => {
-            const g = Number(gKey);
-            const coords = globalPath[g]; if(!coords) return;
-            const cell = document.getElementById(`cell-${coords[0]}-${coords[1]}`); if(!cell) return;
-            placements[g].forEach((pawn, i) => {
+            const info = placements[gKey];
+            const cell = document.getElementById(`cell-${info.pos.r}-${info.pos.c}`); if(!cell) return;
+            info.pawns.forEach((pawn, i) => {
                 const p = document.createElement('div');
                 p.className = `pawn-ludo ${i > 0 ? `stack-${Math.min(i+1,4)}` : ''}`.trim();
                 const clr = (d.colors && d.colors[pawn.role]) || (pawn.role === 'p1' ? 'red' : 'blue');
@@ -1054,6 +1106,7 @@
         rRef.child('ludo').transaction(d => {
             d = normalizeLudoState(d);
             if (d.turn !== myRole || d.phase !== 'roll' || d.status === 'done') return d;
+            if (!d.colors || !d.colors[myRole]) return d;
             const dice = Math.floor(Math.random() * 6) + 1;
             d.dice = dice;
             const moves = getMovablePawns(d, myRole, dice);
@@ -1130,7 +1183,7 @@
     }
 
     function resetCurrentGame() {
-        canAction = true; rewardClaimed = false; 
+        canAction = true; rewardClaimed = false; ludoColorPromptShown = false; 
         if (myRole !== 'p1') return;
         rRef.child('activeTab').once('value', s => {
             const game = s.val(); const up = { rematch: null, gameState: 'playing' };
