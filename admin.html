@@ -33,7 +33,18 @@
         
         .btn:active { transform: scale(0.95); }
         
-        .footer { margin-top: 20px; font-size: 0.7rem; color: #444; }
+         .footer { margin-top: 20px; font-size: 0.7rem; color: #444; }
+
+        .players-zone { margin-top: 30px; padding-top: 20px; border-top: 2px dashed #222; }
+        .btn-players { background:#09f; color:#fff; width:100%; }
+        .btn-players:hover { background:#33adff; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 153, 255, 0.3); }
+        #players-list { margin-top: 12px; max-height: 320px; overflow:auto; text-align:right; }
+        .player-row { background:#0c0c0c; border:1px solid #2c2c2c; border-radius:12px; padding:10px; margin-bottom:8px; }
+        .player-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+        .pts-edit { display:flex; gap:8px; margin-top:8px; }
+        .pts-edit input { margin:0; }
+        .btn-save-pts { background:#0f0; color:#000; border:none; border-radius:10px; padding:8px 12px; font-weight:900; cursor:pointer; }
+
     </style>
 </head>
 <body>
@@ -72,6 +83,12 @@
         </button>
         <p style="color:#555; font-size:0.7rem; margin-top:10px;">هذا الزر سيقوم بمسح كافة بيانات الغرف واللاعبين حالياً.</p>
     </div>
+
+    <div class="players-zone">
+        <button class="btn btn-players" onclick="loadAllPlayers()">👥 عرض جميع اللاعبين</button>
+        <div id="players-list"></div>
+    </div>
+
 </div>
 
 <div class="footer">DEVELOPED BY ZEWEIL &copy; 2026</div>
@@ -103,6 +120,45 @@
         }).catch((error) => {
             alert("❌ حدث خطأ في الاتصال: " + error.message);
         });
+    }
+
+
+    function loadAllPlayers() {
+        const list = document.getElementById('players-list');
+        list.innerHTML = '<p style="color:#777">جاري التحميل...</p>';
+        db.ref('users').once('value').then(snap => {
+            const users = snap.val() || {};
+            const rows = Object.entries(users).map(([id, u]) => {
+                const name = (u && u.name) ? u.name : 'بدون اسم';
+                const points = (u && u.points) ? u.points : 0;
+                const gold = (u && u.gold) ? u.gold : 0;
+                return `
+                    <div class="player-row">
+                        <div class="player-top">
+                            <div><b>${name}</b> <span style="color:#666; font-size:.8rem">(${id})</span></div>
+                            <div style="color:#0af">⭐ ${points} | 💰 ${gold}</div>
+                        </div>
+                        <div class="pts-edit">
+                            <input id="pts-${id}" type="number" value="${points}" placeholder="النقاط الجديدة" />
+                            <button class="btn-save-pts" onclick="savePoints('${id}')">حفظ النقاط</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            list.innerHTML = rows || '<p style="color:#777">لا يوجد لاعبين حالياً.</p>';
+        }).catch(err => {
+            list.innerHTML = `<p style="color:#f66">${err.message}</p>`;
+        });
+    }
+
+    function savePoints(userId) {
+        const inp = document.getElementById(`pts-${userId}`);
+        if (!inp) return;
+        const val = Number(inp.value || 0);
+        db.ref(`users/${userId}/points`).set(val).then(() => {
+            alert('✅ تم تحديث النقاط');
+            loadAllPlayers();
+        }).catch(err => alert('❌ '+err.message));
     }
 
     // دالة السوفت وير الشامل لكل الغرف
