@@ -44,6 +44,13 @@
             margin: 0 auto;
         }
 
+        .bundle-section { max-width: 1000px; margin: 25px auto 0; }
+        .bundle-title { color: var(--main); margin: 10px 0 15px; }
+        .bundle-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .bundle-item { background: linear-gradient(180deg, #1b1b1b, #101010); border: 1px solid #333; border-radius: 18px; padding: 14px; }
+        .bundle-item h3 { margin: 0 0 8px; color: #fff; }
+        .bundle-item p { margin: 0 0 12px; color: #aaa; font-size: 0.85rem; min-height: 42px; }
+
         .skill-item {
             background: var(--card); border: 2px solid #222;
             padding: 15px 10px; border-radius: 20px;
@@ -79,6 +86,7 @@
 
         @media (max-width: 800px) {
             .store-grid { grid-template-columns: repeat(2, 1fr); }
+            .bundle-grid { grid-template-columns: 1fr; }
         }
 
         .toast {
@@ -132,6 +140,28 @@
             <button class="skill-price" id="btn-erase" onclick="buy('erase', 130)">130 جولد</button>
         </div>
     </div>
+
+
+    <section class="bundle-section">
+        <h2 class="bundle-title">باقات احترافية 🔥</h2>
+        <div class="bundle-grid">
+            <div class="bundle-item">
+                <h3>باقة المبتدئ</h3>
+                <p>2 كشف + 1 هروب + 1 استيكة بسعر أقل من المفرد.</p>
+                <button class="skill-price" onclick="buyBundle('starter', 420)">420 جولد</button>
+            </div>
+            <div class="bundle-item">
+                <h3>باقة الكومبو</h3>
+                <p>2 تجميد + 2 استيكة + 1 كشف للسيطرة على الجولات.</p>
+                <button class="skill-price" onclick="buyBundle('combo', 560)">560 جولد</button>
+            </div>
+            <div class="bundle-item">
+                <h3>باقة الملك</h3>
+                <p>كل المهارات + 200 نقطة نجمية إضافية ⭐</p>
+                <button class="skill-price" onclick="buyBundle('king', 980)">980 جولد</button>
+            </div>
+        </div>
+    </section>
 
     <div id="toast" class="toast"></div>
 
@@ -203,6 +233,33 @@
                 } else {
                     notify("حدث خطأ أثناء الشراء. حاول ثانية.");
                 }
+            });
+        }
+
+
+        function buyBundle(bundleId, price) {
+            if (currentGold < price) return notify("ذهبك لا يكفي للباقة 💸");
+
+            const rewards = {
+                starter: { spy: 2, skip: 1, erase: 1, points: 0 },
+                combo: { freeze: 2, erase: 2, spy: 1, points: 30 },
+                king: { spy: 3, skip: 3, freeze: 3, erase: 3, points: 200 }
+            };
+
+            uRef.transaction(user => {
+                if (!user) return;
+                if ((user.gold || 0) < price) return user;
+                user.gold -= price;
+                if (!user.skills) user.skills = {};
+                const pack = rewards[bundleId] || {};
+                ['spy','skip','freeze','erase'].forEach(k => {
+                    if (pack[k]) user.skills[k] = (user.skills[k] || 0) + pack[k];
+                });
+                if (pack.points) user.points = (user.points || 0) + pack.points;
+                return user;
+            }, (error, committed) => {
+                if (committed) notify("تم شراء الباقة بنجاح ✅");
+                else notify("فشل شراء الباقة، حاول تاني");
             });
         }
 

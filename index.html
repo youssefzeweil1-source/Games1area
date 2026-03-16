@@ -135,13 +135,21 @@
         .xo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 90vw; max-width: 400px; margin: auto; }
         .cell { height: 120px; background: rgba(21, 21, 21, 0.8); border-radius: 20px; font-size: 3.5rem; display: flex; align-items: center; justify-content: center; border: 2px solid #222; }
 
-        .ludo-board { display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); width: 95vw; max-width: 350px; aspect-ratio: 1/1; margin: 10px auto; background: #fff; border: 4px solid #333; position: relative; }
+        .ludo-board { display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); width: 95vw; max-width: 390px; aspect-ratio: 1/1; margin: 10px auto; background: #fff; border: 4px solid #333; position: relative; }
         .ludo-cell { border: 0.1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; position: relative; }
-        .l-red { background: #ff003c !important; } .l-green { background: #00ff00 !important; }
-        .l-yellow { background: #ffcc00 !important; } .l-blue { background: #1e3799 !important; }
-        .l-path { background: #eee; }
-        .pawn-ludo { width: 80%; height: 80%; border-radius: 50%; position: absolute; z-index: 10; border: 2px solid #fff; box-shadow: 0 0 8px rgba(0,0,0,0.4); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #dice-val { display: inline-block; width: 50px; height: 50px; background: white; color: black; line-height: 50px; font-size: 1.8rem; font-weight: 900; border-radius: 10px; border: 3px solid var(--main); vertical-align: middle; }
+        .l-red { background: #ff2b4f !important; } .l-green { background: #00ff00 !important; }
+        .l-yellow { background: #ffcc00 !important; } .l-blue { background: #2f6bff !important; }
+        .l-path { background: #f0f0f0; }
+        .l-safe { background: #d7f6ff !important; box-shadow: inset 0 0 0 2px #8ad9ff; }
+        .pawn-ludo { width: 72%; height: 72%; border-radius: 50%; position: absolute; z-index: 10; border: 2px solid #fff; box-shadow: 0 0 8px rgba(0,0,0,0.4); transition: transform 0.2s ease; }
+        .pawn-ludo.stack-2 { transform: translate(-6px, -6px) scale(0.95); }
+        .pawn-ludo.stack-3 { transform: translate(6px, 6px) scale(0.9); }
+        .pawn-ludo.stack-4 { transform: translate(-6px, 6px) scale(0.85); }
+        #dice-val { display: inline-block; width: 56px; height: 56px; background: white; color: black; line-height: 56px; font-size: 1.9rem; font-weight: 900; border-radius: 12px; border: 3px solid var(--main); vertical-align: middle; }
+        .ludo-controls { margin-top: 8px; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .pawn-pickers { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+        .pawn-btn { background: #1d1d1d; color: #fff; border: 1px solid #444; border-radius: 10px; padding: 8px 12px; font-family: 'Cairo'; font-weight: 900; cursor: pointer; }
+        .pawn-btn.active { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,215,0,0.4); }
 
         .hidden { display: none !important; }
         .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 25px 40px; border-radius: 25px; font-weight: 900; font-size: 1.4rem; z-index: 100005; text-align: center; border: 5px solid var(--main); line-height: 1.4; box-shadow: 0 0 100px rgba(0,0,0,0.8); }
@@ -274,6 +282,10 @@
     <h1 style="color:var(--main); font-size: 3.5rem; margin:0; letter-spacing: -2px; text-shadow: 0 0 20px var(--main);">ARENA ⚡</h1>
     <p style="color:#bbb;">made by ZEWEIL!</p>
     <input type="text" id="room" placeholder="كود الغرفة" style="padding:15px; border-radius:15px; border:1px solid #333; background:rgba(0,0,0,0.7); color:white; width:200px; text-align:center;"><br><br>
+    <select id="ludo-color" style="padding:12px 14px; border-radius:12px; border:1px solid #333; background:#111; color:#fff; font-family:'Cairo';">
+        <option value="red">🎨 لون لودو المفضل: أحمر</option>
+        <option value="blue">🎨 لون لودو المفضل: أزرق</option>
+    </select><br><br>
     <button class="btn-main" onclick="joinRoom()">دخول الساحة</button>
 </div>
 
@@ -337,7 +349,9 @@
     <div id="ludo-ui" class="hidden">
         <h3 id="ludo-stat" style="color:var(--main); background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 10px; margin-bottom: 10px;">لودو الأبطال 🎲</h3>
         <div class="ludo-board" id="ludo-board"></div>
-        <div style="margin-top:10px;"><div id="dice-val">?</div><button class="btn-main" onclick="rollLudo()" style="padding: 10px 25px;">ارمي 🎲</button></div>
+        <div class="ludo-controls"><div id="dice-val">?</div><button class="btn-main" onclick="rollLudo()" style="padding: 10px 25px;">ارمي 🎲</button></div>
+        <div id="ludo-hint" style="color:#ccc; font-size:0.9rem; margin-top:8px;">ارمِ النرد ثم اختر البيدق</div>
+        <div class="pawn-pickers" id="pawn-picker"></div>
     </div>
     <button onclick="clearRoom()" style="position: fixed; bottom: 10px; background:none; border:none; color:#555; text-decoration:underline; font-size: 0.7rem;">سوفت وير 🔄</button>
 </div>
@@ -359,11 +373,15 @@
 
     const messageSound = new Audio('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/mixkit-software-interface-start-2574.wav');
 
-    let rID, mID, rRef, uRef, myRole = "", canAction = true, rewardClaimed = false, listenersStarted = false;
+    let rID, mID, rRef, uRef, myRole = "", canAction = true, rewardClaimed = false, listenersStarted = false, ludoBoardDrawn = false;
+    let selectedLudoColor = "red";
     let bgAnimFrame = null, bgMotionPaused = false, bgX = 0, bgY = 0, bgVX = 0.6, bgVY = 0.03, bgSwitchAt = 0, bgLastTs = 0;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
     const gameNames = { 'war': 'السرعة ⚡', 'sh': 'الشايب 🤡', 'bomb': 'القنبلة 💣', 'xo': 'XO ⭕', 'ludo': 'لودو 🎲' };
     const globalPath = [[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0]];
+    const ludoStartIdx = { p1: 0, p2: 26 };
+    const ludoSafeCells = [0,8,13,21,26,34,39,47];
+    const ludoColorsMap = { red: '#ff2b4f', blue: '#2f6bff' };
     const insults = ["😂جت الحزينه تفرح مالقتيلهاش مطررح 😅", "سرعة سلحفاة مشلولة 🐢", "العب بصباعك التاني يمكن تفلح 🤡", "شكلك وحش أوي قدام الخصم 💀", "أنا لو منك أرمي الموبايل 🚮", "جت فيك يا خايب! 💣", "الخصم داس عليك حرفياً 🦶", "إيه الضحك ده? 😂"];
     const wins = ["جلدته جلد! 🔥", "مستواك عالمي يا وحش 🦁", "الخصم بيعيط في الزاوية 😭", "إيه السيطرة دي يا ملك! 👑", "سهلة أوي..  اللي بعددددددددده 😎"];
 
@@ -596,6 +614,7 @@
     function joinRoom() {
         rID = document.getElementById('room').value.trim();
         if(!rID) return alert("دخل كود الغرفة!");
+        selectedLudoColor = (document.getElementById('ludo-color')?.value || 'red');
         mID = localStorage.getItem('arena_user_id') || ("U" + Math.floor(Math.random()*9999));
         localStorage.setItem('arena_user_id', mID);
         
@@ -621,6 +640,8 @@
                 rRef.child(`votes/${myRole}`).onDisconnect().remove();
                 rRef.child(`rematch/${myRole}`).onDisconnect().remove();
             }
+
+            assignLudoColor();
 
             document.getElementById('music-btn').classList.remove('hidden');
             document.getElementById('store-btn').classList.remove('hidden');
@@ -803,11 +824,18 @@
         });
 
         rRef.child('ludo').on('value', s => {
-            const d = s.val() || { turn: 'p1', p1Pos: -1, p2Pos: -1 };
-            document.getElementById('ludo-stat').innerText = d.turn === myRole ? "دورك.. ارمي النرد! 🔥" : "الخصم بيلعب..";
-            document.querySelectorAll('.pawn-ludo').forEach(p => p.remove());
-            if(d.p1Pos >= 0) renderPawn('p1', d.p1Pos);
-            if(d.p2Pos >= 0) renderPawn('p2', (d.p2Pos + 26) % globalPath.length);
+            const d = normalizeLudoState(s.val());
+            const myTurn = d.turn === myRole;
+            const msg = d.winner ? (d.winner === myRole ? "فزت في لودو! 🏆" : "الخصم فاز في لودو") : (myTurn ? (d.phase === 'choose' ? "اختار البيدق اللي هيتحرك" : "دورك.. ارمي النرد! 🔥") : "الخصم بيلعب..");
+            document.getElementById('ludo-stat').innerText = msg;
+            document.getElementById('dice-val').innerText = d.dice || '?';
+            renderLudoState(d);
+            renderPawnPicker(d);
+            if (d.winner && d.status !== 'done') {
+                if (myRole === 'p1') rRef.child('ludo/status').set('done');
+                if (d.winner === myRole) giveReward('win');
+                handleGameOver(d.winner === myRole ? getRandom(wins) : getRandom(insults));
+            }
         });
     }
 
@@ -905,35 +933,187 @@
         });
     }
 
+    function getDefaultLudoState() {
+        return {
+            turn: 'p1', phase: 'roll', dice: null, status: 'playing', winner: null,
+            colors: { p1: 'red', p2: 'blue' },
+            p1Pawns: [-1, -1, -1, -1],
+            p2Pawns: [-1, -1, -1, -1]
+        };
+    }
+
+    function normalizeLudoState(d) {
+        const base = getDefaultLudoState();
+        if (!d) return base;
+        d.colors = Object.assign({}, base.colors, d.colors || {});
+        d.p1Pawns = Array.isArray(d.p1Pawns) ? d.p1Pawns.slice(0,4) : (typeof d.p1Pos === 'number' ? [d.p1Pos, -1, -1, -1] : base.p1Pawns);
+        d.p2Pawns = Array.isArray(d.p2Pawns) ? d.p2Pawns.slice(0,4) : (typeof d.p2Pos === 'number' ? [d.p2Pos, -1, -1, -1] : base.p2Pawns);
+        while (d.p1Pawns.length < 4) d.p1Pawns.push(-1);
+        while (d.p2Pawns.length < 4) d.p2Pawns.push(-1);
+        d.turn = d.turn || 'p1';
+        d.phase = d.phase || 'roll';
+        d.status = d.status || 'playing';
+        d.dice = d.dice ?? null;
+        d.winner = d.winner || null;
+        return d;
+    }
+
+    function assignLudoColor() {
+        if (!rRef || myRole === 'viewer') return;
+        rRef.child('ludo/colors').transaction(colors => {
+            if (!colors) colors = { p1: null, p2: null };
+            const otherRole = myRole === 'p1' ? 'p2' : 'p1';
+            const otherColor = colors[otherRole];
+            let chosen = selectedLudoColor;
+            if (otherColor === chosen) chosen = chosen === 'red' ? 'blue' : 'red';
+            colors[myRole] = chosen;
+            if (!colors[otherRole]) colors[otherRole] = chosen === 'red' ? 'blue' : 'red';
+            return colors;
+        });
+    }
+
     function drawLudoBoard() {
-        const b = document.getElementById('ludo-board'); if(!b) return; b.innerHTML = "";
+        const b = document.getElementById('ludo-board'); if(!b || ludoBoardDrawn) return;
+        b.innerHTML = "";
         for (let r = 0; r < 15; r++) { for (let c = 0; c < 15; c++) {
             let cell = document.createElement('div'); cell.className = "ludo-cell"; cell.id = `cell-${r}-${c}`;
             if (r < 6 && c < 6) cell.classList.add('l-red'); else if (r < 6 && c > 8) cell.classList.add('l-green');
             else if (r > 8 && c < 6) cell.classList.add('l-yellow'); else if (r > 8 && c > 8) cell.classList.add('l-blue');
-            globalPath.forEach(p => { if(p[0] === r && p[1] === c) cell.classList.add('l-path'); });
+            globalPath.forEach((p, idx) => { if(p[0] === r && p[1] === c) { cell.classList.add('l-path'); if (ludoSafeCells.includes(idx)) cell.classList.add('l-safe'); }});
             b.appendChild(cell);
         }}
+        ludoBoardDrawn = true;
+    }
+
+    function getGlobalIndex(role, steps) {
+        return (ludoStartIdx[role] + steps) % globalPath.length;
+    }
+
+    function getPawnGlobalCell(role, pawnSteps) {
+        if (pawnSteps < 0 || pawnSteps > 51) return null;
+        return getGlobalIndex(role, pawnSteps);
+    }
+
+    function renderLudoState(d) {
+        document.querySelectorAll('.pawn-ludo').forEach(p => p.remove());
+        const placements = {};
+        ['p1', 'p2'].forEach(role => {
+            const pawns = d[`${role}Pawns`] || [];
+            pawns.forEach((steps, idx) => {
+                const g = getPawnGlobalCell(role, steps);
+                if (g === null) return;
+                placements[g] = placements[g] || [];
+                placements[g].push({ role, idx });
+            });
+        });
+
+        Object.keys(placements).forEach(gKey => {
+            const g = Number(gKey);
+            const coords = globalPath[g]; if(!coords) return;
+            const cell = document.getElementById(`cell-${coords[0]}-${coords[1]}`); if(!cell) return;
+            placements[g].forEach((pawn, i) => {
+                const p = document.createElement('div');
+                p.className = `pawn-ludo ${i > 0 ? `stack-${Math.min(i+1,4)}` : ''}`.trim();
+                const clr = (d.colors && d.colors[pawn.role]) || (pawn.role === 'p1' ? 'red' : 'blue');
+                p.style.background = ludoColorsMap[clr] || '#fff';
+                p.title = `${pawn.role}-${pawn.idx+1}`;
+                cell.appendChild(p);
+            });
+        });
+    }
+
+    function getMovablePawns(d, role, dice) {
+        const arr = d[`${role}Pawns`] || [];
+        const moves = [];
+        arr.forEach((steps, idx) => {
+            if (steps === -1 && dice === 6) moves.push(idx);
+            else if (steps >= 0 && steps + dice <= 56) moves.push(idx);
+        });
+        return moves;
+    }
+
+    function renderPawnPicker(d) {
+        const box = document.getElementById('pawn-picker');
+        if (!box) return;
+        box.innerHTML = '';
+        if (myRole === 'viewer' || d.turn !== myRole || d.phase !== 'choose') return;
+        const options = getMovablePawns(d, myRole, d.dice || 0);
+        const hint = document.getElementById('ludo-hint');
+        if (hint) hint.innerText = options.length ? `اختار بيدق يتحرك ${d.dice} خطوة` : 'لا توجد نقلة صالحة، سيتم تمرير الدور';
+        options.forEach(idx => {
+            const btn = document.createElement('button');
+            btn.className = 'pawn-btn active';
+            btn.innerText = `بيدق ${idx + 1}`;
+            btn.onclick = () => moveLudoPawn(idx);
+            box.appendChild(btn);
+        });
     }
 
     function rollLudo() {
         if(myRole === 'viewer' || !canAction) return;
-        rRef.child('ludo').once('value', s => {
-            let d = s.val() || { turn: 'p1', p1Pos: -1, p2Pos: -1 };
-            if (d.turn !== myRole) return;
-            let r = Math.floor(Math.random() * 6) + 1;
-            document.getElementById('dice-val').innerText = r;
-            if (myRole === 'p1') { if (d.p1Pos === -1 && r === 6) d.p1Pos = 0; else if (d.p1Pos >= 0) d.p1Pos += r; }
-            else { if (d.p2Pos === -1 && r === 6) d.p2Pos = 0; else if (d.p2Pos >= 0) d.p2Pos += r; }
-            if (d.p1Pos >= 51 || d.p2Pos >= 51) { giveReward('win'); handleGameOver(myRole === 'p1' ? getRandom(wins) : getRandom(insults)); }
-            else { d.turn = (myRole === 'p1' ? 'p2' : 'p1'); rRef.child('ludo').update(d); }
+        rRef.child('ludo').transaction(d => {
+            d = normalizeLudoState(d);
+            if (d.turn !== myRole || d.phase !== 'roll' || d.status === 'done') return d;
+            const dice = Math.floor(Math.random() * 6) + 1;
+            d.dice = dice;
+            const moves = getMovablePawns(d, myRole, dice);
+            if (!moves.length) {
+                d.phase = 'roll'; d.dice = null; d.turn = (myRole === 'p1' ? 'p2' : 'p1');
+            } else {
+                d.phase = 'choose';
+            }
+            return d;
         });
     }
 
-    function renderPawn(role, posIdx) {
-        const coords = globalPath[posIdx]; if(!coords) return;
-        const cell = document.getElementById(`cell-${coords[0]}-${coords[1]}`);
-        if(cell) { let p = document.createElement('div'); p.className = `pawn-ludo`; p.style.background = (role === 'p1') ? '#0f0' : '#f00'; cell.appendChild(p); }
+    function moveLudoPawn(pawnIdx) {
+        if (myRole === 'viewer' || !canAction) return;
+        rRef.child('ludo').transaction(d => {
+            d = normalizeLudoState(d);
+            if (d.turn !== myRole || d.phase !== 'choose' || !d.dice || d.status === 'done') return d;
+
+            const role = myRole;
+            const enemy = role === 'p1' ? 'p2' : 'p1';
+            const arr = [...(d[`${role}Pawns`] || [-1,-1,-1,-1])];
+            const enemyArr = [...(d[`${enemy}Pawns`] || [-1,-1,-1,-1])];
+            const curr = arr[pawnIdx];
+            let next = curr;
+
+            if (curr === -1) {
+                if (d.dice !== 6) return d;
+                next = 0;
+            } else {
+                if (curr + d.dice > 56) return d;
+                next = curr + d.dice;
+            }
+
+            arr[pawnIdx] = next;
+
+            // capture on global track only (not in home lane)
+            if (next >= 0 && next <= 51) {
+                const myGlobal = getGlobalIndex(role, next);
+                if (!ludoSafeCells.includes(myGlobal)) {
+                    enemyArr.forEach((ep, i) => {
+                        if (ep >= 0 && ep <= 51 && getGlobalIndex(enemy, ep) === myGlobal) enemyArr[i] = -1;
+                    });
+                }
+            }
+
+            d[`${role}Pawns`] = arr;
+            d[`${enemy}Pawns`] = enemyArr;
+
+            if (arr.every(v => v === 56)) {
+                d.winner = role;
+                d.status = 'done';
+            }
+
+            if (d.status !== 'done') {
+                d.turn = (d.dice === 6) ? role : enemy;
+                d.phase = 'roll';
+                d.dice = null;
+            }
+            return d;
+        });
     }
 
     function vote(game) {
@@ -958,7 +1138,7 @@
             if (game === 'bomb') up.bomb = {val:0, limit: Math.floor(Math.random()*20)+40, turn:'p1', status:'playing'};
             if (game === 'xo') up.xo = { b: Array(9).fill(""), turn: "p1" };
             if (game === 'sh') rRef.child('sh').remove();
-            if (game === 'ludo') up.ludo = { turn: 'p1', p1Pos: -1, p2Pos: -1 };
+            if (game === 'ludo') up.ludo = getDefaultLudoState();
             rRef.update(up);
         });
     }
