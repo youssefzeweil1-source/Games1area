@@ -82,6 +82,24 @@
             display: flex; gap: 10px; align-items: center;
         }
 
+
+        #setup-name-badge {
+            position: fixed; top: 65px; left: 15px; z-index: 100000;
+            background: #121212; border: 1px solid #333; color: #fff;
+            border-radius: 999px; padding: 8px 14px; font-weight: 900; cursor: pointer;
+            box-shadow: 0 0 10px rgba(255,255,255,0.12);
+        }
+
+        #name-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 230000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #name-modal .box {
+            width: min(92vw, 360px); background: linear-gradient(180deg,#111,#090909);
+            border: 2px solid var(--main); border-radius: 18px; padding: 18px;
+            box-shadow: 0 0 30px rgba(0,255,0,0.25);
+        }
+
         #store-btn {
             background: var(--gold); color: black; border-radius: 10px; padding: 10px 15px;
             font-weight: bold; cursor: pointer; box-shadow: 0 0 15px var(--gold); border: none;
@@ -230,6 +248,7 @@
     <button id="store-btn" class="hidden" onclick="window.location.href='store.html'">🛒 المتجر</button>
     <button id="spin-btn" class="hidden" onclick="window.location.href='Spin.html'">🎡 عجلة الحظ</button>
 </div>
+<div id="setup-name-badge" onclick="promptForName(true)">👤 اسمك: <span id="setup-name-text">...</span></div>
 <div id="music-btn" class="hidden" onclick="toggleMusicModal()">الموسيقى 🎵</div>
 <button id="bg-motion-btn" onclick="toggleBackgroundMotion()">⏸️ الخلفية</button>
 
@@ -306,13 +325,13 @@
     <h2 style="color:var(--main)">غرفة الاستعداد ⚔️</h2>
     <div id="p1-slot" class="player-slot">
         <div class="slot-top">
-            <span>لاعب 1</span>
+            <span id="p1-name">لاعب 1</span>
             <span id="p1-ready" class="status-tag">في انتظار الدخول</span>
         </div>
     </div>
     <div id="p2-slot" class="player-slot">
         <div class="slot-top">
-            <span>لاعب 2</span>
+            <span id="p2-name">لاعب 2</span>
             <span id="p2-ready" class="status-tag">في انتظار الدخول</span>
         </div>
     </div>
@@ -380,6 +399,19 @@
 </div>
 
 
+
+<div id="name-modal" class="hidden">
+    <div class="box">
+        <h3 style="margin:0 0 8px; color:var(--main);">اختر اسمك</h3>
+        <p id="name-modal-note" style="color:#aaa; font-size:0.9rem; margin:0 0 10px;">الاسم يظهر في اللوبي للخصم.</p>
+        <input id="name-input" maxlength="20" placeholder="اكتب اسمك" style="width:100%; padding:12px; border-radius:10px; border:1px solid #333; background:#000; color:#fff; font-family:'Cairo'; box-sizing:border-box;" />
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn-main" onclick="savePlayerName()" style="flex:1; padding:10px;">حفظ ✅</button>
+            <button class="btn-main" onclick="closeNameModal()" style="flex:1; padding:10px; background:#333; color:#fff;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
 <div id="ludo-color-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 220000; display:flex; align-items:center; justify-content:center;">
     <div style="background:#090909; border:2px solid var(--gold); border-radius:20px; padding:20px; width:min(92vw,360px); box-shadow:0 0 30px rgba(255,215,0,0.3);">
         <h3 style="margin:0 0 8px; color:var(--gold);">اختيار لون لودو 🎨</h3>
@@ -401,6 +433,8 @@
 
     let rID, mID, rRef, uRef, myRole = "", canAction = true, rewardClaimed = false, listenersStarted = false, ludoBoardDrawn = false;
     let selectedLudoColor = null, ludoColorPromptShown = false;
+    let playerName = localStorage.getItem('arena_name') || "";
+    let forceRename = false;
     let bgAnimFrame = null, bgMotionPaused = false, bgX = 0, bgY = 0, bgVX = 0.6, bgVY = 0.03, bgSwitchAt = 0, bgLastTs = 0;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
     const gameNames = { 'war': 'السرعة ⚡', 'sh': 'الشايب 🤡', 'bomb': 'القنبلة 💣', 'xo': 'XO ⭕', 'ludo': 'لودو 🎲' };
@@ -656,9 +690,81 @@
         checkDailyChat(); inp.value = "";
     }
 
+
+    function sanitizeName(v) { return (v || '').trim().replace(/\s+/g, ' ').slice(0, 20); }
+
+    function renderSetupName() {
+        document.getElementById('setup-name-text').innerText = playerName || 'بدون اسم';
+    }
+
+    function closeNameModal() {
+        if (forceRename) return;
+        document.getElementById('name-modal').classList.add('hidden');
+    }
+
+    function promptForName(isRename = false) {
+        const modal = document.getElementById('name-modal');
+        const note = document.getElementById('name-modal-note');
+        const inp = document.getElementById('name-input');
+        forceRename = isRename;
+        note.innerText = isRename ? 'تغيير الاسم يكلف 1000 جولد.' : 'اختر اسمًا يظهر للخصم في اللوبي.';
+        inp.value = playerName || '';
+        modal.classList.remove('hidden');
+        setTimeout(() => inp.focus(), 50);
+    }
+
+    function savePlayerName() {
+        const inp = document.getElementById('name-input');
+        const newName = sanitizeName(inp.value);
+        if (!newName) return alert('اكتب اسم صالح');
+
+        // أول تسمية مجانية
+        if (!playerName || !uRef) {
+            playerName = newName;
+            localStorage.setItem('arena_name', playerName);
+            renderSetupName();
+            document.getElementById('name-modal').classList.add('hidden');
+            return;
+        }
+
+        // تغيير الاسم بعد الدخول: 1000 جولد
+        uRef.transaction(user => {
+            if (!user) return user;
+            if ((user.gold || 0) < 1000) return user;
+            user.gold -= 1000;
+            user.name = newName;
+            return user;
+        }, (err, committed, snap) => {
+            if (!committed || !snap || !snap.val() || snap.val().name !== newName) {
+                alert('لا يوجد جولد كافي لتغيير الاسم (مطلوب 1000)');
+                return;
+            }
+            playerName = newName;
+            localStorage.setItem('arena_name', playerName);
+            renderSetupName();
+            document.getElementById('name-modal').classList.add('hidden');
+            showBigMsg('تم تغيير الاسم مقابل 1000 جولد ✅');
+        });
+    }
+
+    function syncNameToProfile() {
+        if (!uRef || !playerName) return;
+        uRef.child('name').set(playerName);
+    }
+
+    function updateLobbyNames(slots) {
+        const p1El = document.getElementById('p1-name');
+        const p2El = document.getElementById('p2-name');
+        p1El.innerText = 'لاعب 1';
+        p2El.innerText = 'لاعب 2';
+        if (slots.p1) db.ref(`users/${slots.p1}/name`).once('value', s => { p1El.innerText = s.val() || 'لاعب 1'; });
+        if (slots.p2) db.ref(`users/${slots.p2}/name`).once('value', s => { p2El.innerText = s.val() || 'لاعب 2'; });
+    }
+
     function joinRoom() {
         rID = document.getElementById('room').value.trim();
         if(!rID) return alert("دخل كود الغرفة!");
+        if (!playerName) { promptForName(false); return; }
         mID = localStorage.getItem('arena_user_id') || ("U" + Math.floor(Math.random()*9999));
         localStorage.setItem('arena_user_id', mID);
         
@@ -691,7 +797,9 @@
             document.getElementById('spin-btn').classList.remove('hidden');
             document.getElementById('player-stats-bar').classList.remove('hidden');
             document.getElementById('setup').classList.add('hidden');
+            document.getElementById('setup-name-badge').classList.add('hidden');
             document.getElementById('lobby').classList.remove('hidden');
+            syncNameToProfile();
             listenStats();
             listenLobby();
         });
@@ -699,7 +807,8 @@
 
     function listenStats() {
         uRef.on('value', snap => {
-            const data = snap.val() || { gold: 0, points: 0, skills: {} };
+            const data = snap.val() || { gold: 0, points: 0, skills: {}, name: playerName };
+            if (data.name) { playerName = data.name; localStorage.setItem('arena_name', playerName); renderSetupName(); }
             document.getElementById('my-gold-display').innerText = data.gold || 0;
             document.getElementById('my-points-display').innerText = data.points || 0;
             
@@ -743,6 +852,7 @@
             const slots = d.slots || {};
             const ready = d.ready || {};
             const votes = d.votes || {};
+            updateLobbyNames(slots);
             
             document.getElementById('p1-ready').innerText = ready.p1 ? "مستعد ✅" : (slots.p1 ? "بيجهز نفسه.." : "غائب");
             document.getElementById('st-p1').innerText = votes.p1 ? "لاعب 1: " + gameNames[votes.p1] : "لاعب 1: بيفكر..";
@@ -1271,6 +1381,8 @@
     function stopMusic() { document.getElementById('bg-music').pause(); toggleMusicModal(); }
     function clearRoom() { if(confirm("تصفير شامل؟")) { rRef.remove(); location.reload(); } }
 
+    renderSetupName();
+    if (!playerName) promptForName(false);
     initBackgroundMotion();
 </script>
 </body>
