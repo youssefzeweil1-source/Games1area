@@ -18,8 +18,8 @@
     .card { background:var(--card); border:1px solid #2b2b2b; border-radius:16px; padding:14px; }
     .wheel { width:290px; height:290px; margin:10px auto; border-radius:50%; border:8px solid var(--gold); position:relative; overflow:hidden; transition: transform 4s cubic-bezier(.17,.67,.12,.99); background:#222; }
     .pointer { width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--gold); margin:0 auto 8px; }
-    .seglabel { position:absolute; left:50%; top:50%; transform-origin:0 0; font-size:.72rem; font-weight:900; color:#fff; text-shadow:0 1px 2px #000; }
-    .prizes { text-align:right; margin-top:10px; font-size:.9rem; }
+    .seglabel { position:absolute; left:50%; top:50%; transform-origin:0 0; font-size:.8rem; font-weight:900; color:#fff; text-shadow:0 1px 2px #000; background:rgba(0,0,0,.35); padding:2px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.25);} 
+    .prizes { display:none; }
     .prize-row { display:flex; justify-content:space-between; border-bottom:1px dashed #333; padding:6px 0; }
     .spin-btn { background:var(--gold); color:#000; border:none; border-radius:10px; padding:10px 16px; font-weight:900; cursor:pointer; }
     .spin-btn:disabled { opacity:.5; cursor:not-allowed; }
@@ -39,7 +39,7 @@
   <div class="wrap">
     <section class="card">
       <h2>قسم أبطال لودو (لفة مجانية)</h2>
-      <p style="color:#aaa">هذه اللفة متاحة فقط من مكافآت الفوز في لودو.</p>
+      <p style="color:#aaa">الإيموجي داخل العجلة يوضح الجائزة + نسبة الفوز %.</p>
       <div class="pointer"></div>
       <div id="wheel-free" class="wheel"></div>
       <button id="spin-free-btn" class="spin-btn" onclick="spin('free')">لف مجانًا 🎯</button>
@@ -48,7 +48,7 @@
 
     <section class="card">
       <h2>قسم النخبة (250 جولد)</h2>
-      <p style="color:#aaa">لفة مدفوعة بجوائز أقوى تناسب السعر.</p>
+      <p style="color:#aaa">إيموجي + نسبة % داخل القطاعات مباشرة.</p>
       <div class="pointer"></div>
       <div id="wheel-paid" class="wheel"></div>
       <button id="spin-paid-btn" class="spin-btn" onclick="spin('paid')">لف بـ 250 جولد 💸</button>
@@ -70,22 +70,22 @@
     let userState = { gold: 0, ludoSpins: 0, skills: {} };
 
     const freePrizes = [
-      { key:'gold_120', label:'120 جولد', type:'gold', amount:120, chance:40, color:'#2e7d32' },
-      { key:'spy_1', label:'مهارة رادار x1', type:'skill', skill:'spy', amount:1, chance:24, color:'#8e24aa' },
-      { key:'skip_1', label:'مهارة هروب x1', type:'skill', skill:'skip', amount:1, chance:15, color:'#1565c0' },
-      { key:'erase_1', label:'مهارة ممحاة x1', type:'skill', skill:'erase', amount:1, chance:12, color:'#6d4c41' },
-      { key:'gold_300', label:'300 جولد', type:'gold', amount:300, chance:7, color:'#f9a825' },
-      { key:'freeze_1', label:'مهارة تجميد x1', type:'skill', skill:'freeze', amount:1, chance:2, color:'#0097a7' }
+      { key:'gold_120', icon:'💰', label:'120 جولد', type:'gold', amount:120, chance:40, color:'#2e7d32' },
+      { key:'spy_1', icon:'👁️', label:'رادار x1', type:'skill', skill:'spy', amount:1, chance:24, color:'#8e24aa' },
+      { key:'skip_1', icon:'🏃', label:'هروب x1', type:'skill', skill:'skip', amount:1, chance:15, color:'#1565c0' },
+      { key:'erase_1', icon:'🧽', label:'ممحاة x1', type:'skill', skill:'erase', amount:1, chance:12, color:'#6d4c41' },
+      { key:'gold_300', icon:'💎', label:'300 جولد', type:'gold', amount:300, chance:7, color:'#f9a825' },
+      { key:'freeze_1', icon:'❄️', label:'تجميد x1', type:'skill', skill:'freeze', amount:1, chance:2, color:'#0097a7' }
     ];
 
     const paidPrizes = [
-      { key:'gold_220', label:'220 جولد', type:'gold', amount:220, chance:30, color:'#2e7d32' },
-      { key:'gold_450', label:'450 جولد', type:'gold', amount:450, chance:18, color:'#f9a825' },
-      { key:'spy_2', label:'رادار x2', type:'skill', skill:'spy', amount:2, chance:14, color:'#8e24aa' },
-      { key:'skip_2', label:'هروب x2', type:'skill', skill:'skip', amount:2, chance:14, color:'#1565c0' },
-      { key:'erase_2', label:'ممحاة x2', type:'skill', skill:'erase', amount:2, chance:12, color:'#6d4c41' },
-      { key:'freeze_2', label:'تجميد x2', type:'skill', skill:'freeze', amount:2, chance:8, color:'#0097a7' },
-      { key:'jackpot', label:'جاكبوت 1000 جولد', type:'gold', amount:1000, chance:4, color:'#c62828' }
+      { key:'gold_220', icon:'💰', label:'220 جولد', type:'gold', amount:220, chance:30, color:'#2e7d32' },
+      { key:'gold_450', icon:'💎', label:'450 جولد', type:'gold', amount:450, chance:18, color:'#f9a825' },
+      { key:'spy_2', icon:'👁️', label:'رادار x2', type:'skill', skill:'spy', amount:2, chance:14, color:'#8e24aa' },
+      { key:'skip_2', icon:'🏃', label:'هروب x2', type:'skill', skill:'skip', amount:2, chance:14, color:'#1565c0' },
+      { key:'erase_2', icon:'🧽', label:'ممحاة x2', type:'skill', skill:'erase', amount:2, chance:12, color:'#6d4c41' },
+      { key:'freeze_2', icon:'❄️', label:'تجميد x2', type:'skill', skill:'freeze', amount:2, chance:8, color:'#0097a7' },
+      { key:'jackpot', icon:'🏆', label:'جاكبوت 1000 جولد', type:'gold', amount:1000, chance:4, color:'#c62828' }
     ];
 
     function toast(msg){ const t=document.getElementById('toast'); t.innerText=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2800); }
@@ -106,8 +106,8 @@
         const lbl = document.createElement('div');
         lbl.className = 'seglabel';
         const mid = start + deg/2;
-        lbl.style.transform = `rotate(${mid}deg) translate(110px, -8px) rotate(${-mid}deg)`;
-        lbl.innerText = p.label;
+        lbl.style.transform = `rotate(${mid}deg) translate(98px, -10px) rotate(${-mid}deg)`;
+        lbl.innerText = `${p.icon || '🎁'} ${p.chance}%`; 
         wheel.appendChild(lbl);
         start += deg;
       });
@@ -190,8 +190,6 @@
 
     renderWheel('wheel-free', freePrizes);
     renderWheel('wheel-paid', paidPrizes);
-    renderList('free-list', freePrizes);
-    renderList('paid-list', paidPrizes);
   </script>
 </body>
 </html>
