@@ -40,15 +40,19 @@
             height: 100%;
             background: #000 url('./bg.png') repeat-x;
             background-size: auto 100%;
+            background-position: 0 0;
             z-index: 0;
             pointer-events: none;
-            animation: moveBg 60s linear infinite;
             filter: brightness(0.4);
             will-change: background-position;
+            transition: filter 0.3s;
         }
-        @keyframes moveBg { 
-            from { background-position: 0 0; } 
-            to { background-position: 10000px 0; } 
+
+        #bg-motion-btn {
+            position: fixed; top: 15px; right: 145px; background: #1d1d1d;
+            color: #fff; border-radius: 10px; padding: 10px 14px; border: 1px solid #3a3a3a;
+            font-weight: bold; cursor: pointer; z-index: 100000;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
         }
 
         #music-modal {
@@ -202,6 +206,7 @@
 
 <button id="store-btn" class="hidden" onclick="window.location.href='store.html'">🛒 المتجر</button>
 <div id="music-btn" class="hidden" onclick="toggleMusicModal()">الموسيقى 🎵</div>
+<button id="bg-motion-btn" onclick="toggleBackgroundMotion()">⏸️ الخلفية</button>
 
 <div id="skills-overlay" class="hidden">
     <div id="skill-spy-btn" class="skill-use-btn hidden" onclick="useSkill('spy')" style="background: var(--shaieb);">👁️ <span class="skill-count" id="count-spy">0</span></div>
@@ -355,6 +360,7 @@
     const messageSound = new Audio('https://github.com/youssefzeweil1-source/Games1area/raw/refs/heads/main/mixkit-software-interface-start-2574.wav');
 
     let rID, mID, rRef, uRef, myRole = "", canAction = true, rewardClaimed = false, listenersStarted = false;
+    let bgAnimFrame = null, bgMotionPaused = false, bgX = 0, bgY = 0, bgVX = 0.6, bgVY = 0.03, bgSwitchAt = 0, bgLastTs = 0;
     const syms = { 'H': '♡', 'D': '◇', 'S': '♤', 'C': '♧' };
     const gameNames = { 'war': 'السرعة ⚡', 'sh': 'الشايب 🤡', 'bomb': 'القنبلة 💣', 'xo': 'XO ⭕', 'ludo': 'لودو 🎲' };
     const globalPath = [[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0]];
@@ -362,6 +368,62 @@
     const wins = ["جلدته جلد! 🔥", "مستواك عالمي يا وحش 🦁", "الخصم بيعيط في الزاوية 😭", "إيه السيطرة دي يا ملك! 👑", "سهلة أوي..  اللي بعددددددددده 😎"];
 
     function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function randomizeBgVector() {
+        const dirX = Math.random() > 0.5 ? 1 : -1;
+        const speedX = 0.12 + Math.random() * 0.28; // slower base speed
+        const speedY = (Math.random() - 0.5) * 0.04;
+        bgVX = dirX * speedX;
+        bgVY = speedY;
+        bgSwitchAt = Date.now() + (4000 + Math.random() * 5000);
+    }
+
+    function animateBackground(ts) {
+        const bg = document.querySelector('.bg-panoramic');
+        if (!bg) return;
+        if (bgMotionPaused || document.hidden) {
+            bgLastTs = ts;
+            bgAnimFrame = requestAnimationFrame(animateBackground);
+            return;
+        }
+
+        if (!bgLastTs) bgLastTs = ts;
+        const dt = Math.min(40, ts - bgLastTs);
+        bgLastTs = ts;
+
+        if (Date.now() >= bgSwitchAt) randomizeBgVector();
+
+        bgX += bgVX * (dt / 16.67);
+        bgY += bgVY * (dt / 16.67);
+        if (bgY > 35 || bgY < -35) bgVY *= -1;
+
+        bg.style.backgroundPosition = `${bgX.toFixed(1)}px ${bgY.toFixed(1)}px`;
+        bgAnimFrame = requestAnimationFrame(animateBackground);
+    }
+
+    function toggleBackgroundMotion() {
+        bgMotionPaused = !bgMotionPaused;
+        const btn = document.getElementById('bg-motion-btn');
+        const bg = document.querySelector('.bg-panoramic');
+        if (btn) btn.innerText = bgMotionPaused ? '▶️ الخلفية' : '⏸️ الخلفية';
+        if (bg) bg.style.filter = bgMotionPaused ? 'brightness(0.35) grayscale(0.2)' : 'brightness(0.4)';
+        localStorage.setItem('arena_bg_motion_paused', bgMotionPaused ? '1' : '0');
+    }
+
+    function initBackgroundMotion() {
+        bgMotionPaused = localStorage.getItem('arena_bg_motion_paused') === '1';
+        const btn = document.getElementById('bg-motion-btn');
+        if (btn) btn.innerText = bgMotionPaused ? '▶️ الخلفية' : '⏸️ الخلفية';
+
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            bgMotionPaused = true;
+            if (btn) btn.innerText = '▶️ الخلفية';
+        }
+
+        randomizeBgVector();
+        if (bgAnimFrame) cancelAnimationFrame(bgAnimFrame);
+        bgAnimFrame = requestAnimationFrame(animateBackground);
+    }
 
     function toggleSidePanel(id) {
         const target = document.getElementById(id);
@@ -913,6 +975,8 @@
     }
     function stopMusic() { document.getElementById('bg-music').pause(); toggleMusicModal(); }
     function clearRoom() { if(confirm("تصفير شامل؟")) { rRef.remove(); location.reload(); } }
+
+    initBackgroundMotion();
 </script>
 </body>
 </html>
