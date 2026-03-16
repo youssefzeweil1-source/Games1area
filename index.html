@@ -84,6 +84,14 @@
             box-shadow: 0 0 15px var(--gold); border: none;
         }
 
+
+        #spin-btn {
+            position: fixed; top: 15px; left: 120px; background: #ff7a00;
+            color: #000; border-radius: 10px; padding: 10px 15px;
+            font-weight: bold; cursor: pointer; z-index: 100000;
+            box-shadow: 0 0 15px #ff7a00; border: none;
+        }
+
         #skills-overlay {
             position: fixed; bottom: 100px; right: 20px;
             display: flex; flex-direction: column; gap: 10px; z-index: 1000;
@@ -219,6 +227,7 @@
 </div>
 
 <button id="store-btn" class="hidden" onclick="window.location.href='store.html'">🛒 المتجر</button>
+<button id="spin-btn" class="hidden" onclick="window.location.href='spin.html'">🎡 عجلة الحظ</button>
 <div id="music-btn" class="hidden" onclick="toggleMusicModal()">الموسيقى 🎵</div>
 <button id="bg-motion-btn" onclick="toggleBackgroundMotion()">⏸️ الخلفية</button>
 
@@ -568,6 +577,23 @@
         });
     }
 
+
+    function giveLudoWinReward() {
+        if (!uRef || rewardClaimed) return;
+        rewardClaimed = true;
+        uRef.transaction(user => {
+            if (!user) user = { gold: 0, points: 0, skills: {}, totalWins: 0, ludoSpins: 0 };
+            user.gold = (user.gold || 0) + 200;
+            user.totalWins = (user.totalWins || 0) + 1;
+            user.tempWin = true;
+            user.ludoSpins = (user.ludoSpins || 0) + 1;
+            user.lastPrizeMsg = "🎡 كسبت لفة مجانية لعجلة الحظ!";
+            return user;
+        }, (err, commit) => {
+            if (commit) showBigMsg("فوز لودو! +200 جولد 💰 + لفة مجانية 🎡");
+        });
+    }
+
     function checkDailyLogin() {
         const today = new Date().toDateString();
         uRef.transaction(user => {
@@ -660,6 +686,7 @@
 
             document.getElementById('music-btn').classList.remove('hidden');
             document.getElementById('store-btn').classList.remove('hidden');
+            document.getElementById('spin-btn').classList.remove('hidden');
             document.getElementById('player-stats-bar').classList.remove('hidden');
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('lobby').classList.remove('hidden');
@@ -862,7 +889,7 @@
             renderPawnPicker(d);
             if (d.winner && d.status !== 'done') {
                 if (myRole === 'p1') rRef.child('ludo/status').set('done');
-                if (d.winner === myRole) giveReward('win');
+                if (d.winner === myRole) giveLudoWinReward();
                 handleGameOver(d.winner === myRole ? getRandom(wins) : getRandom(insults));
             }
         });
